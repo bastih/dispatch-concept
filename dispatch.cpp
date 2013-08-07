@@ -34,6 +34,7 @@ class Typed {
  public:
   virtual ~Typed() {}
   virtual type_id_t getTypeId() const = 0;
+
 };
 
 template <typename BaseClass, class RegisteringClass, typename RegisteredTypes>
@@ -64,7 +65,7 @@ class AStorage : public Typed {
   virtual value_id_t get(std::size_t x) const = 0;
 };
 
-class FixedStorage : public BaseType<AStorage, FixedStorage, storage_types> {
+class FixedStorage final : public BaseType<AStorage, FixedStorage, storage_types> {
  public:
   explicit FixedStorage(std::size_t len) : _values(len, 0) {}
   void set(std::size_t x, value_id_t vid) { _values[x] = vid; };
@@ -74,27 +75,37 @@ class FixedStorage : public BaseType<AStorage, FixedStorage, storage_types> {
   std::vector<value_id_t> _values;
 };
 
-class BitStorage : public BaseType<AStorage, BitStorage, storage_types> {
+class BitStorage final : public BaseType<AStorage, BitStorage, storage_types> {
  public:
   explicit BitStorage(std::size_t len) : _values(len, 0) {}
   void set(std::size_t x, value_id_t vid) { _values[x] = vid; };
   value_id_t get(std::size_t x) const { return _values[x]; }
   const value_id_t& getRef(std::size_t x) const { return _values[x]; }
+
+  virtual void final_protector() final {};
  private:
   std::vector<value_id_t> _values;
 };
 
 class ATable : public Typed {};
-
 class Table : public BaseType<ATable, Table, table_types> {};
 class RawTable : public BaseType<ATable, RawTable, table_types> {};
 
+class SomeTable : public Table {};
+
+template <typename OperatorType>
 class Operator {
   // Operator defines special overloads for different combinations of
   // ATable, AStorage, ADictionary descendants, so we can write
   // special implementations
  public:
-  
+  // Dispatch method
+  void execute(ATable*, AStorage*, ADictionary*);
+  virtual void execute_fallback(ATable*, AStorage*, ADictionary*);
+};
+
+class OperatorImpl : public Operator<OperatorImpl> {
+ public:
   void execute_special(Table*, BitStorage* bs, OrderedDictionary*) {
     debug("Special for Table*, BitStorage*, OrderedDictionary*");
     bs->BitStorage::get(1); // Not a virtual function call
@@ -109,28 +120,26 @@ class Operator {
     debug("Special for Table*, FixedStorage*, UnorderedDictionary*");
   }
 
-  template<class ATABLE,
+  /*  template<class ATABLE,
            class ASTORAGE,
            class ADICT,
-           /* protect from random invokations withouth at least being
-              part of the inheritance chain */
+     
            typename std::enable_if<std::is_base_of<ATable, ATABLE>::value, int>::type = 0,
            typename std::enable_if<std::is_base_of<AStorage, ASTORAGE>::value, int>::type = 0,
            typename std::enable_if<std::is_base_of<ADictionary, ADICT>::value, int>::type = 0>
   void execute_general(ATABLE*, ASTORAGE* as, ADICT*) {
     debug("General implementation kicks in");
     as->ASTORAGE::get(0); // no virtual function call, uses actual types
-  }
+  }*/
   
   void execute_fallback(ATable*, AStorage* as, ADictionary*) {
     debug("Fallback kicks in");
     as->get(0);
   }
 
-  // Dispatch method
-  void execute(ATable*, AStorage*, ADictionary*);
 };
 
+/*
 /// Checks for existance of a method named "execute_special"
 template<typename T, typename RESULT, typename... ARGS>
 class HasExecuteSpecial {
@@ -140,12 +149,22 @@ class HasExecuteSpecial {
  public:
   typedef HasExecuteSpecial type;
   static const bool value = decltype(test<T>(0))::value;
-};
+  };*/
+
+// Culled by SFINAE if reserve does not exist or is not accessible
+template <typename TP, typename... ARGS>
+constexpr auto has_special(TP t, ARGS... args) -> decltype(t.execute_special(std::forward<ARGS>(args)...), bool()) { return true; }
+
+// Used as fallback when SFINAE culls the template method
+template <typename... ARGS>
+constexpr bool has_special(ARGS...) { return false; }
 
 template <typename T, typename S, typename D>
 bool matchingTypeIds(ATable* t, AStorage* s, ADictionary* d) {
   return (t->getTypeId() == T::typeId) && (s->getTypeId() == S::typeId) && (d->getTypeId() == D::typeId);
 }
+
+class ImplementationFound {};
 
 // Call specialized implementation when available
 // Just slightly ugly: enable_if is valid when: op.execute_special(...) is overloaded exactly for tall params
@@ -153,26 +172,27 @@ bool matchingTypeIds(ATable* t, AStorage* s, ADictionary* d) {
 template <class OP,
           class TABLE,
           class STORAGE,
-          class DICT,
+          class DICT>
           /* restricting unnamed parameter */
-          typename std::enable_if<HasExecuteSpecial<OP, void, TABLE*, STORAGE*, DICT*>::value, int>::type = 0>
-void call_special(OP& op, TABLE* table, STORAGE* store, DICT* dict) {
+          //typename std::enable_if<has_special(HasExecuteSpecial<OP, void, TABLE*, STORAGE*, DICT*>::value, int>::type = 0>
+auto call_special(OP& op, TABLE* table, STORAGE* store, DICT* dict) -> typename std::enable_if<has_special(OP(), (TABLE*) 0, (STORAGE*) 0, (DICT*) 0), void>::type {
   /// extracting table/store/dict actual typeIds through virtual function calls
   /// and compare to what we need for thise combination of types
   if (matchingTypeIds<TABLE, STORAGE, DICT>(table, store, dict)) {
-    debug("Matching special found, executing");
     op.execute_special(table, store, dict);
+    // UGLY: Exceptions for control flow
+    throw ImplementationFound();
   }
 }
 
 template <class OP,
           class TABLE,
           class STORAGE,
-          class DICT,
-          typename std::enable_if<!HasExecuteSpecial<OP, void, TABLE*, STORAGE*, DICT*>::value, int>::type = 0>
+          class DICT> 
+//typename std/::enable_if<!HasExecuteSpecial<OP, void, TABLE*, STORAGE*, DICT*>::value, int>::type = 0>
 // Is valid when there is no viable overload in op for the given
 // params -- don't do anything, there is no match here
-void call_special(OP& op, TABLE* table, STORAGE* store, DICT* dict) {}
+auto call_special(OP& op, TABLE* table, STORAGE* store, DICT* dict) -> typename std::enable_if<not has_special(OP(), (TABLE*) 0, (STORAGE*) 0, (DICT*) 0), void>::type {}
 
 template <class OP>
 struct choose_special {
@@ -192,7 +212,7 @@ struct choose_special {
   }
 };
 
-
+/*
 template <class OP>
 struct general_impl {
   OP& op;
@@ -212,20 +232,36 @@ struct general_impl {
     }
   }
 };
-
+*/
 
 typedef boost::mpl::vector<table_types, storage_types, dictionary_types> types;
 
-void Operator::execute(ATable* tab, AStorage* store, ADictionary* dict) {
-  choose_special<Operator> ci { *this, tab, store, dict };
+/*
+template<typename T>
+struct IsFinal {
+  template <typename U> class Check : public U { void final_protector(){ }; };
+  template <typename U> static std::true_type atest(Check<U> *) { Check<U> o; return std::true_type(); };
+  template <typename U> static std::false_type atest(...);
+ public:
+  typedef IsFinal type;
+  static const bool value = decltype(atest<T>(0))::value;
+  };*/
+
+template <typename OperatorType>
+void Operator<OperatorType>::execute(ATable* tab, AStorage* store, ADictionary* dict) {
+  choose_special<OperatorType> ci { *static_cast<OperatorType*>(this), tab, store, dict };
   // generates the cartesian product of all types and per
   // combination SEQUENCE, invokes choose_impl<SEQUENCE>()
-  boost::mpl::cartesian_product<types>(ci);
-
+  try {
+    boost::mpl::cartesian_product<types>(ci);
+  } catch (const ImplementationFound& e) {
+    return;
+  }
+  /*
   // todo: if one impl was found, don't continue with general impl
   general_impl<Operator> gi { *this, tab, store, dict };
   boost::mpl::cartesian_product<types>(gi);
-
+  */
   // todo: if no impl was found, ie types were not registered
   execute_fallback(tab, store, dict);
 }
@@ -236,14 +272,12 @@ int main (int argc, char const *argv[]) {
   ATable* tab = new Table;
   AStorage* store = new FixedStorage(10);
   AStorage* bitstore = new BitStorage(10);
-
-  debug("uo", dict->getTypeId(), UnorderedDictionary::typeId);
-  debug("o", odict->getTypeId(), OrderedDictionary::typeId);
-
-  Operator o;
+  OperatorImpl o;
   
   o.execute(tab, store, dict); // Executes
-  std::cout << "TAB, BS, OD" << std::endl;
+  debug("TAB, BS, OD");
   o.execute(tab, bitstore, odict);
+  debug("No specialization:");
+  o.execute(tab, bitstore, dict);
   return 0;
 }

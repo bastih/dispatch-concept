@@ -3,6 +3,8 @@
 
 #include <iostream>
 
+#ifndef NDEBUG 
+
 template<typename T>
 void debug(T arg) {
   std::cout << arg << std::endl;
@@ -13,6 +15,12 @@ void debug(T arg, ARGS... args) {
   std::cout << arg << " ";
   debug(args...);
 }
+
+#else
+template <typename... ARGS>
+inline void debug(ARGS...) {};
+
+#endif
 
 
 #endif
