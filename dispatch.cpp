@@ -28,7 +28,7 @@ using table_types = boost::mpl::vector<Table, RawTable>;
 using storage_types = boost::mpl::vector<FixedStorage, BitStorage>;
 using dictionary_types = boost::mpl::vector<OrderedDictionary, UnorderedDictionary>;
 
-using type_id_t = strong_typedef<std::size_t>;
+using type_id_t = char;
 
 class Typed {
  public:
@@ -42,19 +42,17 @@ class BaseType : public std::enable_if<std::is_base_of<Typed, BaseClass>::value,
  public:
   static_assert(boost::mpl::contains<RegisteredTypes, RegisteringClass>::value,
                 "RegisteringClass needs to be in RegisteredTypes");
-  type_id_t getTypeId() const override { return this->typeId; }
+  type_id_t getTypeId() const override { return typeId; }
   static type_id_t typeId;
 };
 
 template <typename B, typename RegisteringClass, typename RegisteredTypes>
 type_id_t BaseType<B, RegisteringClass, RegisteredTypes>::typeId { boost::mpl::find<RegisteredTypes, RegisteringClass>::type::pos::value };
 
-
-
 class ADictionary : public Typed {};
 
-class OrderedDictionary : public BaseType<ADictionary, OrderedDictionary, dictionary_types> {};
-class UnorderedDictionary : public BaseType<ADictionary, UnorderedDictionary, dictionary_types> {};
+class OrderedDictionary final : public BaseType<ADictionary, OrderedDictionary, dictionary_types> {};
+class UnorderedDictionary final : public BaseType<ADictionary, UnorderedDictionary, dictionary_types> {};
 
 using value_id_t = std::uint8_t;
 
@@ -68,7 +66,7 @@ class AStorage : public Typed {
 class FixedStorage final : public BaseType<AStorage, FixedStorage, storage_types> {
  public:
   explicit FixedStorage(std::size_t len) : _values(len, 0) {}
-  void set(std::size_t x, value_id_t vid) { _values[x] = vid; };
+  void set(std::size_t x, value_id_t vid) { _values[x] = vid; }
   value_id_t get(std::size_t x) const { return _values[x]; }
   const value_id_t& getRef(std::size_t x) const { return _values[x]; }
  private:
@@ -78,20 +76,16 @@ class FixedStorage final : public BaseType<AStorage, FixedStorage, storage_types
 class BitStorage final : public BaseType<AStorage, BitStorage, storage_types> {
  public:
   explicit BitStorage(std::size_t len) : _values(len, 0) {}
-  void set(std::size_t x, value_id_t vid) { _values[x] = vid; };
+  void set(std::size_t x, value_id_t vid) { _values[x] = vid; }
   value_id_t get(std::size_t x) const { return _values[x]; }
   const value_id_t& getRef(std::size_t x) const { return _values[x]; }
-
-  virtual void final_protector() final {};
  private:
   std::vector<value_id_t> _values;
 };
 
 class ATable : public Typed {};
-class Table : public BaseType<ATable, Table, table_types> {};
-class RawTable : public BaseType<ATable, RawTable, table_types> {};
-
-class SomeTable : public Table {};
+class Table final : public BaseType<ATable, Table, table_types> {};
+class RawTable final : public BaseType<ATable, RawTable, table_types> {};
 
 template <typename OperatorType>
 class Operator {
@@ -100,6 +94,7 @@ class Operator {
   // special implementations
  public:
   // Dispatch method
+  virtual ~Operator() {}
   void execute(ATable*, AStorage*, ADictionary*);
   virtual void execute_fallback(ATable*, AStorage*, ADictionary*);
 };
@@ -119,18 +114,6 @@ class OperatorImpl : public Operator<OperatorImpl> {
   void execute_special(Table*, FixedStorage*, UnorderedDictionary*) {
     debug("Special for Table*, FixedStorage*, UnorderedDictionary*");
   }
-
-  /*  template<class ATABLE,
-           class ASTORAGE,
-           class ADICT,
-     
-           typename std::enable_if<std::is_base_of<ATable, ATABLE>::value, int>::type = 0,
-           typename std::enable_if<std::is_base_of<AStorage, ASTORAGE>::value, int>::type = 0,
-           typename std::enable_if<std::is_base_of<ADictionary, ADICT>::value, int>::type = 0>
-  void execute_general(ATABLE*, ASTORAGE* as, ADICT*) {
-    debug("General implementation kicks in");
-    as->ASTORAGE::get(0); // no virtual function call, uses actual types
-  }*/
   
   void execute_fallback(ATable*, AStorage* as, ADictionary*) {
     debug("Fallback kicks in");
@@ -139,21 +122,9 @@ class OperatorImpl : public Operator<OperatorImpl> {
 
 };
 
-/*
-/// Checks for existance of a method named "execute_special"
-template<typename T, typename RESULT, typename... ARGS>
-class HasExecuteSpecial {
-  template <typename U, RESULT (U::*)(ARGS...)> struct Check;
-  template <typename U> static std::true_type test(Check<U, &U::execute_special> *) ;
-  template <typename U> static std::false_type test(...);
- public:
-  typedef HasExecuteSpecial type;
-  static const bool value = decltype(test<T>(0))::value;
-  };*/
-
-// Culled by SFINAE if reserve does not exist or is not accessible
+// Called by SFINAE if reserve does not exist or is not accessible
 template <typename TP, typename... ARGS>
-constexpr auto has_special(TP t, ARGS... args) -> decltype(t.execute_special(std::forward<ARGS>(args)...), bool()) { return true; }
+constexpr auto has_special(TP t, ARGS... args) -> decltype(t->execute_special(std::forward<ARGS>(args)...), bool()) { return true; }
 
 // Used as fallback when SFINAE culls the template method
 template <typename... ARGS>
@@ -166,6 +137,9 @@ bool matchingTypeIds(ATable* t, AStorage* s, ADictionary* d) {
 
 class ImplementationFound {};
 
+template <class T>
+using ptr = T*;
+
 // Call specialized implementation when available
 // Just slightly ugly: enable_if is valid when: op.execute_special(...) is overloaded exactly for tall params
 // through this specialization, we don't need a fallback execute_special for abstract base classes
@@ -175,7 +149,7 @@ template <class OP,
           class DICT>
           /* restricting unnamed parameter */
           //typename std::enable_if<has_special(HasExecuteSpecial<OP, void, TABLE*, STORAGE*, DICT*>::value, int>::type = 0>
-auto call_special(OP& op, TABLE* table, STORAGE* store, DICT* dict) -> typename std::enable_if<has_special(OP(), (TABLE*) 0, (STORAGE*) 0, (DICT*) 0), void>::type {
+auto call_special(OP& op, TABLE* table, STORAGE* store, DICT* dict) -> typename std::enable_if<has_special(ptr<OP>(), (TABLE*) 0, (STORAGE*) 0, (DICT*) 0), void>::type {
   /// extracting table/store/dict actual typeIds through virtual function calls
   /// and compare to what we need for thise combination of types
   if (matchingTypeIds<TABLE, STORAGE, DICT>(table, store, dict)) {
@@ -192,7 +166,7 @@ template <class OP,
 //typename std/::enable_if<!HasExecuteSpecial<OP, void, TABLE*, STORAGE*, DICT*>::value, int>::type = 0>
 // Is valid when there is no viable overload in op for the given
 // params -- don't do anything, there is no match here
-auto call_special(OP& op, TABLE* table, STORAGE* store, DICT* dict) -> typename std::enable_if<not has_special(OP(), (TABLE*) 0, (STORAGE*) 0, (DICT*) 0), void>::type {}
+auto call_special(OP&, TABLE*, STORAGE*, DICT*) -> typename std::enable_if<not has_special((OP*) 0, (TABLE*) 0, (STORAGE*) 0, (DICT*) 0), void>::type {}
 
 template <class OP>
 struct choose_special {
@@ -212,40 +186,8 @@ struct choose_special {
   }
 };
 
-/*
-template <class OP>
-struct general_impl {
-  OP& op;
-  ATable* table;
-  AStorage* store;
-  ADictionary * dict;
-
-  template <typename SEQUENCE>
-  inline void operator()() {
-    using TABLE = typename boost::mpl::at_c<SEQUENCE, 0>::type;
-    using STORAGE = typename boost::mpl::at_c<SEQUENCE, 1>::type;
-    using DICT = typename boost::mpl::at_c<SEQUENCE, 2>::type;
-    // cast all operators to their presumed types, so we can invoke
-    // the correct implementation
-    if (matchingTypeIds<TABLE, STORAGE, DICT>(table, store, dict)) {
-      op.execute_general(static_cast<TABLE*>(table), static_cast<STORAGE*>(store), static_cast<DICT*>(dict));
-    }
-  }
-};
-*/
 
 typedef boost::mpl::vector<table_types, storage_types, dictionary_types> types;
-
-/*
-template<typename T>
-struct IsFinal {
-  template <typename U> class Check : public U { void final_protector(){ }; };
-  template <typename U> static std::true_type atest(Check<U> *) { Check<U> o; return std::true_type(); };
-  template <typename U> static std::false_type atest(...);
- public:
-  typedef IsFinal type;
-  static const bool value = decltype(atest<T>(0))::value;
-  };*/
 
 template <typename OperatorType>
 void Operator<OperatorType>::execute(ATable* tab, AStorage* store, ADictionary* dict) {
@@ -254,14 +196,10 @@ void Operator<OperatorType>::execute(ATable* tab, AStorage* store, ADictionary* 
   // combination SEQUENCE, invokes choose_impl<SEQUENCE>()
   try {
     boost::mpl::cartesian_product<types>(ci);
-  } catch (const ImplementationFound& e) {
+  } catch (const ImplementationFound&) {
     return;
   }
-  /*
-  // todo: if one impl was found, don't continue with general impl
-  general_impl<Operator> gi { *this, tab, store, dict };
-  boost::mpl::cartesian_product<types>(gi);
-  */
+
   // todo: if no impl was found, ie types were not registered
   execute_fallback(tab, store, dict);
 }
