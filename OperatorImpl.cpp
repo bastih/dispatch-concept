@@ -2,7 +2,7 @@
 
 #include "debug.hpp"
 
-void OperatorImpl::execute_special(Table*, BitStorage* bs, OrderedDictionary<dis_int>*) {
+void OperatorImpl::execute_special(Table*, BitStorage<2>* bs, OrderedDictionary<dis_int>*) {
     debug("Special for Table*, BitStorage*, OrderedDictionary*");
     bs->get(1); // Not a virtual function call
 }

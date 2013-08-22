@@ -16,8 +16,8 @@ class RawTable;
 using table_types = boost::mpl::vector<Table, RawTable>;
 
 class FixedStorage;
-class BitStorage;
-using storage_types = boost::mpl::vector<FixedStorage, BitStorage>;
+template <int> class BitStorage;
+using storage_types = boost::mpl::vector<FixedStorage, BitStorage<2> >;
 
 template <typename T> class OrderedDictionary;
 template <typename T> class UnorderedDictionary;

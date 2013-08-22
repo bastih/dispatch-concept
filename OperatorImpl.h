@@ -20,12 +20,12 @@ class OperatorImpl : public Operator<OperatorImpl> {
   }
 
   template <typename ValueType>
-  void execute_special(Table*, BitStorage*, OrderedDictionary<ValueType>* t) {
+  void execute_special(Table*, BitStorage<2>*, OrderedDictionary<ValueType>* t) {
     std::cout << "MMM based on column type" << std::endl;
     t->size();
   }
 
-  void execute_special(Table*, BitStorage* bs, OrderedDictionary<dis_int>*);
+  void execute_special(Table*, BitStorage<2>* bs, OrderedDictionary<dis_int>*);
 
   void execute_fallback(ATable*, AStorage* as, ADictionary*);
 };
