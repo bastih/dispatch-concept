@@ -8,24 +8,21 @@
 #include "storage.h"
 #include <iostream>
 
-class OperatorImpl : public Operator<OperatorImpl> {
+template <typename T>
+class OperatorImpl : public Operator<OperatorImpl<T>> {
  public:
-  /*void execute_special(Table*, FixedStorage* fs, OrderedDictionary*);
-    void execute_special(Table*, FixedStorage*, UnorderedDictionary*);*/
-
-  template <typename ValueType>
-  void execute_special(Table*, FixedStorage*, UnorderedDictionary<ValueType>* t) {
-    std::cout << "Generic implementation based on column type" << std::endl;
-    t->size();
+  template <typename ValueType=T>
+  void execute_special(Table*, FixedStorage*, OrderedDictionary<ValueType>* t) {
+    debug("Specialization Table, FixedStorage,", typeid(t).name());
   }
 
-  template <typename ValueType>
-  void execute_special(Table*, BitStorage<2>*, OrderedDictionary<ValueType>* t) {
-    std::cout << "MMM based on column type" << std::endl;
-    t->size();
+  template <typename ValueType=T>
+  void execute_special(Table*, FixedStorage* bs, UnorderedDictionary<ValueType>* t) {
+    debug("Specialization Table, FixedStorage,", typeid(t).name());
+  };
+
+  void execute_fallback(ATable* t, AStorage* s, ADictionary* d) {
+    debug("Fallback kicks in, types are");
+    debug(typeid(t).name(), "\n", typeid(s).name(), "\n", typeid(d).name());
   }
-
-  void execute_special(Table*, BitStorage<2>* bs, OrderedDictionary<dis_int>*);
-
-  void execute_fallback(ATable*, AStorage* as, ADictionary*);
 };

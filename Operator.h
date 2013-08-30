@@ -15,7 +15,6 @@ constexpr bool has_special(ARGS...) { return false; }
 
 template <typename T, typename S, typename D>
 bool matchingTypeIds(ATable* t, AStorage* s, ADictionary* d) {
-  printf("Comparing\n");
   return (t->getTypeId() == T::typeId) && (s->getTypeId() == S::typeId) && (d->getTypeId() == D::typeId);
 }
 
@@ -83,10 +82,8 @@ class Operator {
       return;
     }
 
-    // todo: if no impl was found, ie types were not registered
     execute_fallback(tab, store, dict);
   }
 
-  virtual void execute_fallback(ATable*, AStorage*, ADictionary*);
-
+  virtual void execute_fallback(ATable*, AStorage*, ADictionary*) = 0;
 };

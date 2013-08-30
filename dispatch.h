@@ -2,8 +2,6 @@
 
 #include <type_traits>
 #include <typeindex>
-#include "boost/mpl/find.hpp"
-#include "boost/mpl/contains.hpp"
 
 using type_id_t = std::size_t;
 
