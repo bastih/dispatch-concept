@@ -4,10 +4,10 @@
 PROJECT = dispatch
 # Compiler
 CC = clang++
-COMPILE_OPTIONS = -std=c++11 -Wall -Wextra -Weffc++
+COMPILE_OPTIONS = -std=c++11 -Wall -Wextra -O3
 
 HEADERS =
-LIBS =
+LIBS = 
 
 # Subdirs to search for additional source files
 SOURCE_FILES := $(wildcard *.cpp)
@@ -20,7 +20,7 @@ OBJECTS = $(patsubst %.cpp, %.o, $(SOURCE_FILES))
 all: $(DEPENDENCIES) $(PROJECT)
 
 $(PROJECT): $(OBJECTS)
-	$(CC) -o $(PROJECT) $(OBJECTS) $(LIBS)
+	$(CC) -o $(PROJECT) -O3 $(OBJECTS) $(LIBS)
 
 %.o: %.cpp $(HEADERS)
 	$(CC) -c $(COMPILE_OPTIONS) -o $@ $<

@@ -38,9 +38,6 @@ public:
   std::size_t size() const { return _values.size(); }
 
   value_id_t add(const T& value) override {
-    if (value <= _values.back()) {
-      throw std::runtime_error("may only insert linearly");
-    }
     _values.push_back(value);
     return _values.size() - 1;
   }
@@ -183,7 +180,6 @@ class Vertical : public ATable {
   partitions_t getPartitions(std::size_t column) const override {
     std::size_t part_index, column_offset;
     std::tie(part_index, column_offset) = partForColumn(column);
-    debug(part_index, column_offset);
     return _parts[part_index]->getPartitions(column_offset);
   }
 
