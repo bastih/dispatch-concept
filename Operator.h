@@ -35,6 +35,7 @@ template <class OP,
 auto call_special(OP& op, TABLE* table, STORAGE* store, DICT* dict) -> typename std::enable_if<has_special((OP*) 0, (TABLE*) 0, (STORAGE*) 0, (DICT*) 0), void>::type {
   /// extracting table/store/dict actual typeIds through virtual function calls
   /// and compare to what we need for thise combination of types
+  // op.checks++;
   if (matchingTypeIds<TABLE, STORAGE, DICT>(table, store, dict)) {
     op.execute_special(table, store, dict);
     // UGLY: Exceptions for control flow
@@ -73,7 +74,7 @@ template <typename OperatorType>
 class Operator {
  public:
   virtual ~Operator() {}
-
+  std::size_t checks = 0;
   void execute(ATable* tab, AStorage* store, ADictionary* dict) {
     choose_special<OperatorType> ci { *static_cast<OperatorType*>(this), tab, store, dict };
     try {

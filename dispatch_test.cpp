@@ -3,10 +3,11 @@
 #include "debug.hpp"
 #include "make_unique.h"
 #include <random>
+#include <map>
 #include "ScanOperator.h"
 #include "EmptyOperator.h"
 #include "FullOperator.h"
-
+#include "PapiTracer.h"
 
 constexpr dis_int UPPER_VID = 1000;
 
@@ -35,7 +36,7 @@ std::unique_ptr<UnorderedDictionary<dis_int> > makeUnorderedDict() {
 }
 
 std::unique_ptr<ATable> makeMainTable() {
-  return make_unique<Table>(makeFixedStorage(1000*1000*10), makeOrderedDict());
+  return make_unique<Table>(makeFixedStorage(1000*1000), makeOrderedDict());
 }
 
 std::unique_ptr<ATable> makeDeltaTable() {
@@ -55,29 +56,37 @@ std::unique_ptr<ATable> makeStore() {
 
 inline uint64_t rdtsc() {
   uint32_t lo, hi;
-    __asm__ __volatile__ (
+  __asm__ __volatile__ (
       "xorl %%eax, %%eax\n"
       "cpuid\n"
       "rdtsc\n"
       : "=a" (lo), "=d" (hi)
       :
       : "%ebx", "%ecx");
-    return (uint64_t)hi << 32 | lo;
+  return (uint64_t)hi << 32 | lo;
 }
 
 template <typename F>
 void times_measure(std::size_t i, F&& f) {
-  std::vector<std::uint64_t> times(i);
-  std::uint32_t cutoff = 2;
+  std::map<std::string, std::vector<std::uint64_t> > values;
   for (std::size_t r=0; r<i; ++r) {
-    auto s1 = rdtsc();
+    PapiTracer pt;
+    pt.addEvent("PAPI_TOT_CYC");
+    pt.addEvent("PAPI_TOT_INS");
+    pt.addEvent("PAPI_L1_DCM");
+    pt.start();
     f();
-    auto s2 = rdtsc();
-    times[r] = s2 - s1;
+    pt.stop();
+    values["CYC"].push_back(pt.value("PAPI_TOT_CYC"));
+    values["INS"].push_back(pt.value("PAPI_TOT_INS"));
+    values["L1M"].push_back(pt.value("PAPI_L1_DCM"));
   }
-  std::sort(times.begin(), times.end());
-  std::uint64_t sum = std::accumulate(times.begin()+cutoff, times.end()-cutoff, 0u);
-  debug("avg", sum / (i-2*cutoff), "min", times[cutoff], "max", times[times.size() - cutoff - 1]);
+  for (auto& kv : values) {
+    auto& times = kv.second;
+    std::sort(times.begin(), times.end());
+    std::uint64_t sum = std::accumulate(times.begin(), times.end(), 0u);
+    debug(kv.first, "avg", sum / i, "min", times[0], "max", times.back());
+  }
 }
 
 int main () {
@@ -88,43 +97,55 @@ int main () {
   std::random_device rd;
   std::uniform_int_distribution<int> dist(0, UPPER_VID);
   dis_int value = dist(rd);
-  //ScanOperator so(somestore.get(), 1, value);
-  {debug("EmptyOperator");
-  EmptyOperator so(somestore.get(), 1);
-  so.execute();
-  times_measure(15, [&] () {
-      so.execute();
-    });
+
+  {
+    debug("EmptyOperator");
+    EmptyOperator so(somestore.get(), 1);
+    debug("dispatched");
+    times_measure(15, [&] () {
+        so.execute();
+      });
   
-  so.executeFallback();
-  times_measure(15, [&] () {
-      so.executeFallback();
-    });
+    debug("fallback");
+    times_measure(15, [&] () {
+        so.executeFallback();
+      });
   }
-  { debug("FullOperator");
-  FullOperator so(somestore.get(), 1);
-  so.execute();
-  times_measure(5, [&] () {
-      so.execute();
-    });
-  
-  so.executeFallback();
-  times_measure(5, [&] () {
-      so.executeFallback();
-    });
+  {
+    debug("FullOperator");
+    FullOperator so(somestore.get(), 1);
+    debug("dispatched");
+    times_measure(15, [&] () {
+        so.execute();
+      });
+    debug("fallback");
+    times_measure(15, [&] () {
+        so.executeFallback();
+      });
   }
 
-
+  {
+    debug("ScanOperator");
+    ScanOperator so(somestore.get(), 1, value);
+    debug("dispatched");
+    times_measure(15, [&] () {
+        so.execute();
+      });
+    debug("fallback");
+    times_measure(15, [&] () {
+        so.executeFallback();
+      });
+  }
   /*std::cout << store->get(0) << std::endl;
-  std::cout << store->get(2) << std::endl;
-  std::cout << store->get(1) << std::endl;
-  OperatorImpl o;
+    std::cout << store->get(2) << std::endl;
+    std::cout << store->get(1) << std::endl;
+    OperatorImpl o;
 
 
 
-  o.execute(tab, store, dict); // Executes
-  o.execute(tab,store, odict);
-  o.execute(tab,store, dict);*/
+    o.execute(tab, store, dict); // Executes
+    o.execute(tab,store, odict);
+    o.execute(tab,store, dict);*/
   return 0;
 }
 

@@ -5,6 +5,10 @@
 
 class FullOperatorImpl final : public Operator< FullOperatorImpl > {
 public:
+  // This template means that we implement dispatch for every possible
+  // type combination. We use this to simulate the worst case where only
+  // the last two combinations are matching the input, thus we have to
+  // check 2 * 2 * 6 and 2 * 2 * 6 - 1 times
   template <typename TAB, typename F, typename Dictionary>
   void execute_special(TAB* tab, F* fs, Dictionary* t) {}
 
@@ -21,6 +25,7 @@ void FullOperator::execute() {
               const_cast<AStorage*>(part.storage),
               const_cast<ADictionary*>(part.dict));
   }
+
 }
 
 void FullOperator::executeFallback() {
