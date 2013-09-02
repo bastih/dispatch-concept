@@ -4,6 +4,8 @@
 #include "make_unique.h"
 #include <random>
 #include "ScanOperator.h"
+#include "EmptyOperator.h"
+#include "FullOperator.h"
 
 
 constexpr dis_int UPPER_VID = 1000;
@@ -55,8 +57,8 @@ inline uint64_t rdtsc() {
   uint32_t lo, hi;
     __asm__ __volatile__ (
       "xorl %%eax, %%eax\n"
-                                "cpuid\n"
-                                "rdtsc\n"
+      "cpuid\n"
+      "rdtsc\n"
       : "=a" (lo), "=d" (hi)
       :
       : "%ebx", "%ecx");
@@ -64,10 +66,18 @@ inline uint64_t rdtsc() {
 }
 
 template <typename F>
-void times(std::size_t i, F&& f) {
+void times_measure(std::size_t i, F&& f) {
+  std::vector<std::uint64_t> times(i);
+  std::uint32_t cutoff = 2;
   for (std::size_t r=0; r<i; ++r) {
+    auto s1 = rdtsc();
     f();
+    auto s2 = rdtsc();
+    times[r] = s2 - s1;
   }
+  std::sort(times.begin(), times.end());
+  std::uint64_t sum = std::accumulate(times.begin()+cutoff, times.end()-cutoff, 0u);
+  debug("avg", sum / (i-2*cutoff), "min", times[cutoff], "max", times[times.size() - cutoff - 1]);
 }
 
 int main () {
@@ -78,24 +88,31 @@ int main () {
   std::random_device rd;
   std::uniform_int_distribution<int> dist(0, UPPER_VID);
   dis_int value = dist(rd);
-  ScanOperator so(somestore.get(), 1, value);
+  //ScanOperator so(somestore.get(), 1, value);
+  {debug("EmptyOperator");
+  EmptyOperator so(somestore.get(), 1);
   so.execute();
-  times(5, [&] () {
-      auto s1 = rdtsc();
+  times_measure(15, [&] () {
       so.execute();
-      auto s2 = rdtsc();
-      debug(s2-s1);
     });
   
   so.executeFallback();
-  times(5, [&] () {
-      auto s1 = rdtsc();
+  times_measure(15, [&] () {
       so.executeFallback();
-      auto s2 = rdtsc();
-      debug(s2-s1);
     });
-
-
+  }
+  { debug("FullOperator");
+  FullOperator so(somestore.get(), 1);
+  so.execute();
+  times_measure(5, [&] () {
+      so.execute();
+    });
+  
+  so.executeFallback();
+  times_measure(5, [&] () {
+      so.executeFallback();
+    });
+  }
 
 
   /*std::cout << store->get(0) << std::endl;

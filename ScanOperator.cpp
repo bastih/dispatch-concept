@@ -20,7 +20,6 @@ public:
     }
   }
 
-
   void execute_fallback(ATable*, AStorage* s, ADictionary* d) {
     auto bd = static_cast<BaseDictionary<T>* >(d);
     value_id_t vid = bd->getSubstitute(needle);

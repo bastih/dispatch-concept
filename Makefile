@@ -3,8 +3,8 @@
 # Project Name (executable)
 PROJECT = dispatch
 # Compiler
-CC = clang++
-COMPILE_OPTIONS = -std=c++11 -Wall -Wextra -O3
+CC = g++-4.8
+COMPILE_OPTIONS = -std=c++11 -Wall -Wextra -O2 -fomit-frame-pointer
 
 HEADERS =
 LIBS = 
@@ -20,7 +20,7 @@ OBJECTS = $(patsubst %.cpp, %.o, $(SOURCE_FILES))
 all: $(DEPENDENCIES) $(PROJECT)
 
 $(PROJECT): $(OBJECTS)
-	$(CC) -o $(PROJECT) -O3 $(OBJECTS) $(LIBS)
+	$(CC) -o $(PROJECT) -O2 $(OBJECTS) $(LIBS)
 
 %.o: %.cpp $(HEADERS)
 	$(CC) -c $(COMPILE_OPTIONS) -o $@ $<

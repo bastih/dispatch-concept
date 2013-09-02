@@ -13,6 +13,9 @@ constexpr auto has_special(TP t, ARGS... args) -> decltype(t->execute_special(st
 template <typename... ARGS>
 constexpr bool has_special(ARGS...) { return false; }
 
+template <typename T>
+inline  constexpr std::size_t typeId() { return typeid(T).hash_code(); }
+
 template <typename T, typename S, typename D>
 bool matchingTypeIds(ATable* t, AStorage* s, ADictionary* d) {
   return (t->getTypeId() == T::typeId) && (s->getTypeId() == S::typeId) && (d->getTypeId() == D::typeId);
