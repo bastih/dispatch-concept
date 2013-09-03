@@ -3,8 +3,8 @@
 # Project Name (executable)
 PROJECT = dispatch
 # Compiler
-CC = g++-4.8
-COMPILE_OPTIONS = -std=c++11 -Wall -Wextra -O3 -fomit-frame-pointer -fwhole-program -D USE_PAPI_TRACE -march=native
+CC = ~/clang-33/bin/clang++
+COMPILE_OPTIONS = -std=c++11 -Weverything -Wno-c++98-compat -Wno-c++98-compat-pedantic -Wno-missing-prototypes -Wno-unused -O3 -D USE_PAPI_TRACE
 
 HEADERS =
 LIBS = -lpapi
@@ -20,13 +20,10 @@ OBJECTS = $(patsubst %.cpp, %.o, $(SOURCE_FILES))
 all: $(DEPENDENCIES) $(PROJECT)
 
 $(PROJECT): $(OBJECTS)
-	$(CC) -o $(PROJECT) -flto=jobserver $(OBJECTS) $(LIBS)
-
-dispatch_test.o : dispatch_test.cpp $(HEADERS)
-	$(CC) -c $(COMPILE_OPTIONS) -o $@ $<
+	$(CC) -o $(PROJECT) $(OBJECTS) $(LIBS)
 
 %.o: %.cpp $(HEADERS)
-	$(CC) -c $(COMPILE_OPTIONS) -flto -o $@ $<
+	$(CC) -c $(COMPILE_OPTIONS) -o $@ $<
 
 # Build & Run Project
 run: $(PROJECT)

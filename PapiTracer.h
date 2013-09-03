@@ -60,9 +60,6 @@ class PapiTracer {
 
   static void initialize() {
     static bool initialized = false;
-    static std::mutex init_mtx;
-
-    std::lock_guard<std::mutex> guard(init_mtx);
     if (!initialized) {
       if (PAPI_library_init(PAPI_VER_CURRENT) != PAPI_VER_CURRENT)
         throw TracingError("PAPI could not be initialized");

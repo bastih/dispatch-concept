@@ -54,21 +54,9 @@ std::unique_ptr<ATable> makeStore() {
   return make_unique<Horizontal>(std::move(store_parts));
 }
 
-inline uint64_t rdtsc() {
-  uint32_t lo, hi;
-  __asm__ __volatile__ (
-      "xorl %%eax, %%eax\n"
-      "cpuid\n"
-      "rdtsc\n"
-      : "=a" (lo), "=d" (hi)
-      :
-      : "%ebx", "%ecx");
-  return (uint64_t)hi << 32 | lo;
-}
-
 template <typename F>
-void times_measure(std::size_t i, F&& f) {
-  std::map<std::string, std::vector<std::uint64_t> > values;
+void times_measure(std::string name, F&& f, std::size_t i=15) {
+  std::map<std::string, std::vector<long long> > values;
   for (std::size_t r=0; r<i; ++r) {
     PapiTracer pt;
     pt.addEvent("PAPI_TOT_CYC");
@@ -85,7 +73,7 @@ void times_measure(std::size_t i, F&& f) {
     auto& times = kv.second;
     std::sort(times.begin(), times.end());
     std::uint64_t sum = std::accumulate(times.begin(), times.end(), 0u);
-    debug(kv.first, "avg", sum / i, "min", times[0], "max", times.back());
+    debug(name, kv.first, "avg", sum / i, "min", times[0], "max", times.back());
   }
 }
 
@@ -101,40 +89,22 @@ int main () {
   {
     debug("EmptyOperator");
     EmptyOperator so(somestore.get(), 1);
-    debug("dispatched");
-    times_measure(15, [&] () {
-        so.execute();
-      });
-  
-    debug("fallback");
-    times_measure(15, [&] () {
-        so.executeFallback();
-      });
+    times_measure("dispatch", [&] () { so.execute(); });
+    times_measure("fallback", [&] () { so.executeFallback();  });
   }
+
   {
     debug("FullOperator");
     FullOperator so(somestore.get(), 1);
-    debug("dispatched");
-    times_measure(15, [&] () {
-        so.execute();
-      });
-    debug("fallback");
-    times_measure(15, [&] () {
-        so.executeFallback();
-      });
+    times_measure("dispatch", [&] () { so.execute(); });
+    times_measure("fallback", [&] () { so.executeFallback(); });
   }
 
   {
     debug("ScanOperator");
     ScanOperator so(somestore.get(), 1, value);
-    debug("dispatched");
-    times_measure(15, [&] () {
-        so.execute();
-      });
-    debug("fallback");
-    times_measure(15, [&] () {
-        so.executeFallback();
-      });
+    times_measure("dispatch", [&] () { so.execute(); });
+    times_measure("fallback", [&] () { so.executeFallback(); });
   }
   /*std::cout << store->get(0) << std::endl;
     std::cout << store->get(2) << std::endl;

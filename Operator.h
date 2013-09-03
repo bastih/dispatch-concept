@@ -14,11 +14,14 @@ template <typename... ARGS>
 constexpr bool has_special(ARGS...) { return false; }
 
 template <typename T>
-inline  constexpr std::size_t typeId() { return typeid(T).hash_code(); }
+inline static std::size_t typeId() {
+  static size_t id = typeid(T).hash_code();
+  return id;
+}
 
 template <typename T, typename S, typename D>
 bool matchingTypeIds(ATable* t, AStorage* s, ADictionary* d) {
-  return (t->getTypeId() == T::typeId) && (s->getTypeId() == S::typeId) && (d->getTypeId() == D::typeId);
+  return (t->getTypeId() == typeId<T>()) && (s->getTypeId() == typeId<S>()) && (d->getTypeId() == typeId<D>());
 }
 
 class ImplementationFound {};
@@ -88,6 +91,6 @@ class Operator {
 
     execute_fallback(tab, store, dict);
   }
-
+  
   virtual void execute_fallback(ATable*, AStorage*, ADictionary*) = 0;
 };

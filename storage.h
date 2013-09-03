@@ -33,8 +33,6 @@ class BaseDictionary : public ADictionary {
 template <typename T>
 class OrderedDictionary final : public BaseDictionary<T> {
 public:
-  static type_id_t typeId;
-
   std::size_t size() const { return _values.size(); }
 
   value_id_t add(const T& value) override {
@@ -55,13 +53,8 @@ private:
 };
 
 template <typename T>
-type_id_t OrderedDictionary<T>::typeId = typeid(OrderedDictionary<T>).hash_code();
-
-template <typename T>
 class UnorderedDictionary final : public BaseDictionary<T> {
 public:
-  static type_id_t typeId;
-
   std::size_t size() const { return _values.size(); }
 
   value_id_t add(const T& value) {
@@ -84,9 +77,6 @@ private:
   std::vector<T> _values;
   std::unordered_map<T, value_id_t> _index;
 };
-
-template <typename T>
-type_id_t UnorderedDictionary<T>::typeId = typeid(UnorderedDictionary<T>).hash_code();
 
 class AStorage : public Typed {
  public:
@@ -115,7 +105,6 @@ class FixedStorage final : public AStorage {
 template <int N>
 class BitStorage final : public AStorage {
 public:
-  static type_id_t typeId;
   static constexpr int values_per_interval = 64/N;
   explicit BitStorage(std::size_t len) { _values.resize(N*len/64+1); }
 
@@ -147,9 +136,6 @@ public:
 private:
   std::vector<std::uint64_t> _values;
 };
-
-template <int N>
-type_id_t BitStorage<N>::typeId = typeid(BitStorage<N>).hash_code();
 
 typedef struct {
   std::size_t start;
@@ -227,7 +213,6 @@ class Horizontal : public ATable {
 
 class Table final : public ATable {
 public:
-  static type_id_t typeId;
   Table() = default;
   Table(std::unique_ptr<AStorage> s, std::unique_ptr<ADictionary> d) : _storage(std::move(s)), _dictionary(std::move(d)) {}
   std::size_t width() const override {
@@ -244,6 +229,5 @@ private:
 
 class RawTable final : public ATable {
 public:
-  static  type_id_t typeId;
 private:
 };

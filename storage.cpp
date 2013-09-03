@@ -1,9 +1,5 @@
 #include "storage.h"
 
-type_id_t FixedStorage::typeId = typeid(FixedStorage).hash_code();
-
-type_id_t Table::typeId = typeid(Table).hash_code();
-type_id_t RawTable::typeId = typeid(RawTable).hash_code();
 
 AStorage::~AStorage() {}
 
