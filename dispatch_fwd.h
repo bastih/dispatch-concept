@@ -15,6 +15,7 @@ class Table;
 class RawTable;
 
 class FixedStorage;
+class DefaultValueCompressedStorage;
 template <int> class BitStorage;
 
 template <typename T> class OrderedDictionary;

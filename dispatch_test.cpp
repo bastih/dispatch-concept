@@ -10,16 +10,34 @@
 #include "FullOperator.h"
 
 constexpr dis_int UPPER_VID = 1000;
+constexpr value_id_t DEFAULT_VID = 10;
 
 std::unique_ptr<FixedStorage> makeFixedStorage(std::size_t sz) {
   auto fs = make_unique<FixedStorage>(sz);
   std::random_device rd;
   std::uniform_int_distribution<int> dist(0, UPPER_VID);
+
   for (auto i=0ul, e=sz; i < e; ++i) {
     fs->set(i, dist(rd));
   }
   return fs;
 }
+
+std::unique_ptr<DefaultValueCompressedStorage> makeValueCompressedStorage(std::size_t sz) {
+  auto fs = make_unique<DefaultValueCompressedStorage>(sz, DEFAULT_VID);
+  std::random_device rd;
+
+  std::uniform_int_distribution<int> dist(0, UPPER_VID);
+  std::uniform_int_distribution<int> dist_default(0, 20);
+  for (auto i=0ul, e=sz; i < e; ++i) {
+    if (dist_default(rd) != 0) // 95 % same value
+      fs->set(i, DEFAULT_VID);
+    else
+      fs->set(i, dist(rd));
+  }
+  return fs;
+}
+
 
 std::unique_ptr<OrderedDictionary<dis_int> > makeOrderedDict() {
   auto d = make_unique<OrderedDictionary<dis_int> >();
@@ -39,6 +57,10 @@ std::unique_ptr<ATable> makeMainTable() {
   return make_unique<Table>(makeFixedStorage(6*1000*1000), makeOrderedDict());
 }
 
+std::unique_ptr<ATable> makeCompressedMainTable() {
+  return make_unique<Table>(makeValueCompressedStorage(6*1000*1000), makeOrderedDict());
+}
+
 std::unique_ptr<ATable> makeDeltaTable() {
   return make_unique<Table>(make_unique<FixedStorage>(1000*1000), makeUnorderedDict());
 }
@@ -49,6 +71,8 @@ std::unique_ptr<ATable> makeStore() {
     mains.emplace_back(makeMainTable());
     deltas.emplace_back(makeDeltaTable());
   }
+  mains.emplace_back(makeCompressedMainTable());
+  deltas.emplace_back(makeDeltaTable());
   store_parts.emplace_back(make_unique<Vertical>(std::move(mains)));
   store_parts.emplace_back(make_unique<Vertical>(std::move(deltas)));
   return make_unique<Horizontal>(std::move(store_parts));
@@ -94,6 +118,13 @@ int main () {
     times_measure("perfect ", [&] () { so.executePerfect(); });
   }
 
+  {
+    debug("ScanOperator on default storage");
+    ScanOperator so(somestore.get(), 3, value);
+    times_measure("dispatch", [&] () { so.execute(); });
+    times_measure("fallback", [&] () { so.executeFallback(); });
+    times_measure("abstract", [&] () { so.executeAbstract(); });
+  }
   
   /*std::cout << store->get(0) << std::endl;
     std::cout << store->get(2) << std::endl;

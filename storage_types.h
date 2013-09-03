@@ -6,7 +6,9 @@
 
 using table_types = boost::mpl::vector<RawTable, Table>;
 
-using storage_types = boost::mpl::vector<BitStorage<2>, FixedStorage>;
+using storage_types = boost::mpl::vector<BitStorage<2>,
+                                         DefaultValueCompressedStorage,
+                                         FixedStorage>;
 
 using dictionary_types = boost::mpl::vector<
   OrderedDictionary<dis_float>,

@@ -7,9 +7,13 @@
 #include <vector>
 #include <memory>
 
+#include <boost/container/flat_map.hpp>
+#include <boost/dynamic_bitset.hpp>
+
 #include "dispatch.h"
 #include "storage_types.h"
 #include "like_const.h"
+#include "Range.h"
 
 #define ALL(var) std::begin(var), std::end(var)
 #define _AUTO(var) decltype(*std::begin(var))
@@ -90,6 +94,53 @@ class AStorage : public Typed {
   virtual void set(std::size_t x, value_id_t vid) = 0;
   virtual value_id_t get(std::size_t x) const = 0;
   virtual std::size_t rows() const = 0;
+};
+
+#define likely(x)       __builtin_expect(!!(x), 1)
+#define unlikely(x)     __builtin_expect(!!(x), 0)
+
+class DefaultValueCompressedStorage : public AStorage {
+ public:
+  ~DefaultValueCompressedStorage() {}
+  explicit DefaultValueCompressedStorage(std::size_t len, value_id_t value) : _default_value(value), _exception_positions(len, true) {}
+  void set(std::size_t x, value_id_t vid) {
+    if (likely(vid == _default_value)) {
+      if (likely(_exception_positions[x] == false)) { return; }
+      else {
+        _exceptions.erase(x);
+        _exception_positions[x] = false;
+      }
+    }
+    else {
+      _exception_positions[x] = true;
+      _exceptions[x] = vid;
+    }
+  }
+  value_id_t get(std::size_t x) const {
+    if (unlikely(_exception_positions[x])) return _exceptions.at(x);
+    else return _default_value;
+  }
+  std::vector<std::size_t> createPositionListFromDefault() {
+    std::size_t start = 0;
+    std::size_t set_bit_pos;
+    std::vector<std::size_t> positions;
+    while ((set_bit_pos = _exception_positions.find_next(start)) !=  boost::dynamic_bitset<>::npos) {
+      if (start != set_bit_pos) {
+        std::size_t num_new_bits = set_bit_pos - start;
+        positions.resize(positions.size() + num_new_bits);
+        Range range(start, set_bit_pos);
+        std::copy(ALL(range), positions.end() - num_new_bits);
+      }
+      start = set_bit_pos;
+    }
+    return positions;
+  }
+
+  std::size_t rows() const { return _exception_positions.size(); }
+ private:
+  const value_id_t _default_value;
+  boost::dynamic_bitset<> _exception_positions;
+  boost::container::flat_map<std::size_t, value_id_t> _exceptions;
 };
 
 class FixedStorage final : public AStorage {
@@ -176,39 +227,6 @@ class ATable : public Typed {
 
 
 
-class Range {
- public:
-  class RangeIter {
-   public:
-    RangeIter(std::size_t val) : _value(val) {}
-
-    inline bool operator==(const RangeIter& other) {
-      return _value == other._value;
-    }
-
-    inline bool operator!=(const RangeIter& other) {
-      return _value != other._value;
-    }
-
-    inline size_t operator*() {
-      return _value;
-    }
-
-    inline void operator++() {
-      _value++;
-    }
-   private:
-    std::size_t _value;
-  };
-
-  Range(std::size_t stop) : _stop(stop) {}
-  Range(std::size_t start, std::size_t stop) : _start(start), _stop(stop) {}
-  RangeIter begin() const { return RangeIter(_start); }
-  RangeIter end() const { return RangeIter(_stop); }
- private:
-  const std::size_t _start = 0;
-  const std::size_t _stop;
-};
 
 /* HYBRID DATABASE */
 class Vertical : public ATable {
@@ -243,7 +261,7 @@ class Horizontal : public ATable {
   std::size_t height() const override {
     return std::accumulate(ALL(_parts), 0u, [] (std::size_t r, _AUTO(_parts) part) { return r + part->height(); });
   }
-  
+
   void cacheOffsets() override {
     std::size_t offset = 0;
     for (const auto& part : _parts) {
@@ -260,13 +278,11 @@ class Horizontal : public ATable {
     std::size_t part = 0;
     std::size_t offset = 0;
     for (std::size_t coffset : _cached_offsets) {
-      if (offset + coffset > row) {
-        return _parts[part]->getValueId(col, row - offset);
-      }
+      if (offset + coffset > row) break;
       part++;
       offset += coffset;
     }
-    assert(false);
+    return _parts[part]->getValueId(col, row - offset);
   }
 
  private:
