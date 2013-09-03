@@ -3,10 +3,10 @@
 # Project Name (executable)
 PROJECT = dispatch
 # Compiler
-CC = ~/clang-33/bin/clang++
-#CC = clang++
-BUILD_FLAGS = -O3
-COMPILE_OPTIONS = -std=c++11 -Weverything -Wno-c++98-compat -Wno-c++98-compat-pedantic -Wno-missing-prototypes -Wno-unused -D USE_PAPI_TRACE -march=native $(BUILD_FLAGS)
+#CC = ~/clang-33/bin/clang++
+CC = g++-4.8
+BUILD_FLAGS = -O4 -DNDEBUG 
+COMPILE_OPTIONS = -std=c++11 -Wall -Wextra -Wno-unused-parameter -Wno-padded -D USE_PAPI_TRACE -march=native $(BUILD_FLAGS) -funroll-loops
 
 HEADERS =
 LIBS = -lpapi -L/usr/local/lib
@@ -21,10 +21,13 @@ OBJECTS = $(patsubst %.cpp, %.o, $(SOURCE_FILES))
 all: $(DEPENDENCIES) $(PROJECT)
 
 $(PROJECT): $(OBJECTS)
-	$(CC) -o $(PROJECT) $(OBJECTS) $(BUILD_FLAGS) $(LIBS)
+	$(CC) -o $(PROJECT) $(OBJECTS) $(BUILD_FLAGS) $(LIBS) -flto
+
+dispatch_test.o: dispatch_test.cpp $(HEADERS)
+	$(CC) -c $(COMPILE_OPTIONS) -o $@ $<
 
 %.o: %.cpp $(HEADERS)
-	$(CC) -c $(COMPILE_OPTIONS) -o $@ $<
+	$(CC) -c $(COMPILE_OPTIONS) -flto -o $@ $<
 
 # Build & Run Project
 run: $(PROJECT)

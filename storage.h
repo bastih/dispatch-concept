@@ -18,7 +18,7 @@ using value_id_t = std::uint64_t;
 
 class ADictionary : public Typed {
  public:
-
+  ~ADictionary();
 };
 
 template <typename T>
@@ -27,7 +27,7 @@ class BaseDictionary : public ADictionary {
   virtual std::size_t size() const = 0;
   virtual value_id_t add(const T&) = 0;
   virtual value_id_t getSubstitute(const T&) = 0;
-  virtual T get(const value_id_t&) const = 0;
+  virtual T getValue(const value_id_t&) const = 0;
 };
 
 template <typename T>
@@ -45,12 +45,14 @@ public:
     return std::distance(std::begin(_values), it);
   }
 
-  T get(const value_id_t& value_id) const override {
+  T getValue(const value_id_t& value_id) const override {
     return _values.at(value_id);
   }
 private:
   std::vector<T> _values;
 };
+
+#include "debug.hpp"
 
 template <typename T>
 class UnorderedDictionary final : public BaseDictionary<T> {
@@ -58,9 +60,13 @@ public:
   std::size_t size() const { return _values.size(); }
 
   value_id_t add(const T& value) {
-    auto iter = _index.insert(std::make_pair(value, _values.size() + 1));
+    auto iter = _index.insert(std::make_pair(value, _values.size()));
     if (iter.second) {
       _values.push_back(value);
+      //debug("putting in value", value);
+      //debug(iter.first->second);
+      //debug(_values.size());
+      //debug("returning", iter.first->second);
     }
     return iter.first->second;
   }
@@ -69,7 +75,7 @@ public:
     return _index[value];
   }
 
-  T get(const value_id_t& value_id) const override {
+  T getValue(const value_id_t& value_id) const override {
     return _values.at(value_id);
   }
 
@@ -88,7 +94,6 @@ class AStorage : public Typed {
 
 class FixedStorage final : public AStorage {
  public:
-  static  type_id_t typeId;
   explicit FixedStorage(std::size_t len);
   void set(std::size_t x, value_id_t vid);
   value_id_t get(std::size_t x) const;
@@ -100,7 +105,6 @@ class FixedStorage final : public AStorage {
 
 #include <bitset>
 #include <cassert>
-#include "debug.hpp"
 
 template <int N>
 class BitStorage final : public AStorage {
@@ -146,81 +150,150 @@ typedef struct {
   const ADictionary* dict;
 } partition_t;
 
+typedef struct {
+  value_id_t vid;
+  const ADictionary* dict;
+} value_id_with_dict_t;
+
 typedef std::vector<partition_t> partitions_t;
 
 class ATable : public Typed {
  public:
   ~ATable();
   virtual std::size_t width() const = 0;
+  virtual std::size_t height() const = 0;
   virtual partitions_t getPartitions(std::size_t column) const = 0;
+
+  /// BAAAAD GURL
+  template <typename T>
+  T getValue(std::size_t col, std::size_t row) const {
+    auto val_dct = getValueId(col, row);
+    return static_cast<const BaseDictionary<T>*>(val_dct.dict)->getValue(val_dct.vid);
+  }
+  virtual void cacheOffsets() {}
+  virtual value_id_with_dict_t getValueId(std::size_t col, std::size_t row) const = 0;
 };
 
+
+
+class Range {
+ public:
+  class RangeIter {
+   public:
+    RangeIter(std::size_t val) : _value(val) {}
+
+    inline bool operator==(const RangeIter& other) {
+      return _value == other._value;
+    }
+
+    inline bool operator!=(const RangeIter& other) {
+      return _value != other._value;
+    }
+
+    inline size_t operator*() {
+      return _value;
+    }
+
+    inline void operator++() {
+      _value++;
+    }
+   private:
+    std::size_t _value;
+  };
+
+  Range(std::size_t stop) : _stop(stop) {}
+  Range(std::size_t start, std::size_t stop) : _start(start), _stop(stop) {}
+  RangeIter begin() const { return RangeIter(_start); }
+  RangeIter end() const { return RangeIter(_stop); }
+ private:
+  const std::size_t _start = 0;
+  const std::size_t _stop;
+};
 
 /* HYBRID DATABASE */
 class Vertical : public ATable {
  public:
   Vertical(std::vector<std::unique_ptr<ATable>> parts) : _parts(std::move(parts)) {}
-  std::size_t width() const override {
-    return std::accumulate(ALL(_parts), 0u, [] (std::size_t r, _AUTO(_parts) part) { return r + part->width(); });
-  }
-  partitions_t getPartitions(std::size_t column) const override {
-    std::size_t part_index, column_offset;
-    std::tie(part_index, column_offset) = partForColumn(column);
-    return _parts[part_index]->getPartitions(column_offset);
-  }
-
- private:
-  std::pair<std::size_t, std::size_t> partForColumn(std::size_t column) const {
-    std::size_t column_offset = 0u;
-    std::size_t part_index = 0u;
-    for (const auto& part : _parts) {
-      if (column_offset + part->width() > column) {
-        return std::make_pair(part_index, column - column_offset);
-      }
-      part_index++;
-      column_offset += part->width();
+  std::size_t width() const override;
+  std::size_t height() const override { return _parts.front()->height(); }
+  partitions_t getPartitions(std::size_t column) const override;
+  /// BAD GURRRRRL
+  void cacheOffsets() override {
+    for (const auto col : Range(width())) {
+      _cached_offsets.push_back(partForColumn(col));
     }
-    throw std::runtime_error("Could not find column");
+    for (auto& part : _parts) {
+      part->cacheOffsets();
+    }
   }
+  std::vector<std::pair<std::size_t, std::size_t>> _cached_offsets;
+  value_id_with_dict_t getValueId(std::size_t col, std::size_t row) const {
+    auto p = _cached_offsets[col];
+    return _parts[p.first]->getValueId(p.second, row);
+  }
+ private:
+  std::pair<std::size_t, std::size_t> partForColumn(std::size_t column) const;
   std::vector<std::unique_ptr<ATable>> _parts;
 };
 
 class Horizontal : public ATable {
  public:
   Horizontal(std::vector<std::unique_ptr<ATable>> parts) : _parts(std::move(parts)) {}
-  std::size_t width() const override {
-    return _parts.at(0)->width();
+  std::size_t width() const override;
+  std::size_t height() const override {
+    return std::accumulate(ALL(_parts), 0u, [] (std::size_t r, _AUTO(_parts) part) { return r + part->height(); });
   }
-
-  partitions_t getPartitions(std::size_t column) const override {
-    partitions_t r;
-    std::size_t height_offset = 0u;
-    for (const auto& part: _parts) {
-      auto p = part->getPartitions(column);
-      for (partition_t& subpart: p) {
-        subpart.start = height_offset;
-        height_offset += subpart.stop;
-        subpart.stop = height_offset;
-      }
-      r.insert(std::begin(r), ALL(p));
+  
+  void cacheOffsets() override {
+    std::size_t offset = 0;
+    for (const auto& part : _parts) {
+      offset += part->height();
+      _cached_offsets.push_back(offset);
+      part->cacheOffsets();
     }
-    return r;
+  }
+  std::vector<std::size_t> _cached_offsets;
+  partitions_t getPartitions(std::size_t column) const;
+
+  /// BAD GURRLLL
+  value_id_with_dict_t getValueId(std::size_t col, std::size_t row) const override {
+    std::size_t part = 0;
+    std::size_t offset = 0;
+    for (std::size_t coffset : _cached_offsets) {
+      if (offset + coffset > row) {
+        return _parts[part]->getValueId(col, row - offset);
+      }
+      part++;
+      offset += coffset;
+    }
+    assert(false);
   }
 
  private:
+  std::pair<std::size_t, std::size_t> partForRow(std::size_t row) const {
+    std::size_t offset = 0, part_index=0;
+    for (const auto& part: _parts) {
+      if (offset + part->height() > row) {
+        return std::make_pair(part_index, row - offset);
+      }
+      offset += part->height();
+      part_index++;
+    }
+    throw std::runtime_error("sucks");
+  }
   std::vector<std::unique_ptr<ATable>> _parts;
 };
 
 class Table final : public ATable {
 public:
-  Table() = default;
   Table(std::unique_ptr<AStorage> s, std::unique_ptr<ADictionary> d) : _storage(std::move(s)), _dictionary(std::move(d)) {}
-  std::size_t width() const override {
-    return 1;
-  }
-  partitions_t getPartitions(std::size_t column) const override {
-    assert(column < width());
-    return { partition_t { 0, _storage->rows(), column, this, _storage.get(), _dictionary.get() }};
+  std::size_t width() const override;
+  std::size_t height() const override { return _storage->rows(); }
+  partitions_t getPartitions(std::size_t column) const override;
+  value_id_with_dict_t getValueId(std::size_t col, std::size_t row) const override {
+    assert(col == 0);
+    // usually we would have to pass col too, but we currently assume single-width tables
+    return {_storage->get(row), _dictionary.get()};
   }
 private:
   std::unique_ptr<AStorage> _storage;
@@ -231,3 +304,4 @@ class RawTable final : public ATable {
 public:
 private:
 };
+

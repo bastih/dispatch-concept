@@ -1,13 +1,13 @@
-#include "storage.h"
-#include "OperatorImpl.h"
-#include "debug.hpp"
-#include "make_unique.h"
 #include <random>
 #include <map>
+
+#include "storage.h"
+#include "debug.hpp"
+#include "measure.h"
+#include "make_unique.h"
 #include "ScanOperator.h"
 #include "EmptyOperator.h"
 #include "FullOperator.h"
-#include "PapiTracer.h"
 
 constexpr dis_int UPPER_VID = 1000;
 
@@ -23,24 +23,24 @@ std::unique_ptr<FixedStorage> makeFixedStorage(std::size_t sz) {
 
 std::unique_ptr<OrderedDictionary<dis_int> > makeOrderedDict() {
   auto d = make_unique<OrderedDictionary<dis_int> >();
-  for (dis_int i=0; i < UPPER_VID; i++)
+  for (dis_int i=0; i <= UPPER_VID; i++)
     d->add(i);
   return d;
 }
 
 std::unique_ptr<UnorderedDictionary<dis_int> > makeUnorderedDict() {
   auto d = make_unique<UnorderedDictionary<dis_int> >();
-  for (dis_int i=UPPER_VID-1; i >= 0; --i)
+  for (dis_int i=UPPER_VID; i >= 0; --i)
     d->add(i); // add vids in reverse
   return d;
 }
 
 std::unique_ptr<ATable> makeMainTable() {
-  return make_unique<Table>(makeFixedStorage(1000*1000), makeOrderedDict());
+  return make_unique<Table>(makeFixedStorage(6*1000*1000), makeOrderedDict());
 }
 
 std::unique_ptr<ATable> makeDeltaTable() {
-  return make_unique<Table>(make_unique<FixedStorage>(2*1000*1000), makeUnorderedDict());
+  return make_unique<Table>(make_unique<FixedStorage>(1000*1000), makeUnorderedDict());
 }
 
 std::unique_ptr<ATable> makeStore() {
@@ -54,38 +54,22 @@ std::unique_ptr<ATable> makeStore() {
   return make_unique<Horizontal>(std::move(store_parts));
 }
 
-template <typename F>
-void times_measure(std::string name, F&& f, std::size_t i=15) {
-  std::map<std::string, std::vector<long long> > values;
-  for (std::size_t r=0; r<i; ++r) {
-    PapiTracer pt;
-    pt.addEvent("PAPI_TOT_CYC");
-    pt.addEvent("PAPI_TOT_INS");
-    pt.addEvent("PAPI_L1_DCM");
-    pt.start();
-    f();
-    pt.stop();
-    values["CYC"].push_back(pt.value("PAPI_TOT_CYC"));
-    values["INS"].push_back(pt.value("PAPI_TOT_INS"));
-    values["L1M"].push_back(pt.value("PAPI_L1_DCM"));
-  }
-  for (auto& kv : values) {
-    auto& times = kv.second;
-    std::sort(times.begin(), times.end());
-    std::uint64_t sum = std::accumulate(times.begin(), times.end(), 0u);
-    debug(name, kv.first, "avg", sum / i, "min", times[0], "max", times.back());
-  }
-}
-
 int main () {
   debug("Generating");
   auto somestore = makeStore();
+  somestore->cacheOffsets();
   debug("Done.");
-  auto parts = somestore->getPartitions(1);
+
   std::random_device rd;
   std::uniform_int_distribution<int> dist(0, UPPER_VID);
   dis_int value = dist(rd);
-
+  // DICT TESTS
+  /*debug(somestore->getValueId(2, 1000*1000-1).vid);
+  debug(somestore->getValueId(2, 1000*1000-1).dict);
+  debug(somestore->getValueId(2, 1000*1000).vid);
+  debug(somestore->getValueId(2, 1000*1000).dict);
+  debug(somestore->getValue<dis_int>(2, 1000*1000-1));
+  debug(somestore->getValue<dis_int>(2, 1000*1000));*/
   {
     debug("EmptyOperator");
     EmptyOperator so(somestore.get(), 1);
@@ -99,13 +83,18 @@ int main () {
     times_measure("dispatch", [&] () { so.execute(); });
     times_measure("fallback", [&] () { so.executeFallback(); });
   }
+  
 
   {
     debug("ScanOperator");
     ScanOperator so(somestore.get(), 1, value);
     times_measure("dispatch", [&] () { so.execute(); });
     times_measure("fallback", [&] () { so.executeFallback(); });
+    times_measure("abstract", [&] () { so.executeAbstract(); });
+    times_measure("perfect ", [&] () { so.executePerfect(); });
   }
+
+  
   /*std::cout << store->get(0) << std::endl;
     std::cout << store->get(2) << std::endl;
     std::cout << store->get(1) << std::endl;

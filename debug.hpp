@@ -1,16 +1,25 @@
-#ifndef __DEBUG_HPP
-#define __DEBUG_HPP
+#pragma once
 
 #include <iostream>
-
-
-
-#ifndef NDEBUG
+#include <iomanip>
 
 template <typename T>
 void print(T arg, std::string delim=" ") {
-  std::cout << arg << delim;
+  std::cout << " " << arg << delim;
 }
+
+inline void print(long long arg, std::string delim) {
+  std::cout << std::setw(12) << arg << delim;
+}
+
+inline void print(unsigned long long arg, std::string delim) {
+  std::cout << std::setw(12) << arg << delim;
+}
+
+inline void print(std::uint64_t arg, std::string delim) {
+  std::cout << std::setw(12) << arg << delim;
+}
+
 
 template <typename T>
 void print(std::vector<T> arg, std::string delim=" ") {
@@ -27,14 +36,7 @@ void debug(T arg) {
 
 template <typename T, typename... ARGS>
 void debug(T arg, ARGS... args) {
-  print(arg);
+  print(arg, " ");
   debug(args...);
 }
 
-#else
-template <typename... ARGS>
-inline void debug(ARGS...) {};
-#endif
-
-
-#endif
