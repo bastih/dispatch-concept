@@ -7,7 +7,7 @@
 
 // Called by SFINAE if reserve does not exist or is not accessible
 template <typename TP, typename... ARGS>
-constexpr auto has_special(TP t, ARGS... args) -> decltype(t->execute_special(std::forward<ARGS>(args)...), bool()) { return true; }
+constexpr auto has_special(__attribute__((unused)) TP t, __attribute__((unused)) ARGS... args) -> decltype(t->execute_special(std::forward<ARGS>(args)...), bool()) { return true; }
 
 // Used as fallback when SFINAE culls the template method
 template <typename... ARGS>

@@ -12,7 +12,7 @@ class Range {
     using pointer = value_type*;
     using iterator_category = std::forward_iterator_tag;
 
-    RangeIter(std::size_t val) : _value(val) {}
+    explicit RangeIter(std::size_t val) : _value(val) {}
 
     inline bool operator==(const RangeIter& other) {
       return _value == other._value;
@@ -29,7 +29,7 @@ class Range {
     inline void operator++() {
       _value++;
     }
-    
+   
     inline void operator--() {
       _value++;
     }

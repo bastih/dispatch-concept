@@ -54,23 +54,6 @@ void ScanOperator::execute() {
 
 void ScanOperator::executeFallback() {
   ScanOperatorImpl<dis_int> o;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
   o.needle = _value;
   for (const auto& part: _table->getPartitions(_column)) {
     o.offset = part.start;
@@ -94,8 +77,8 @@ void ScanOperator::executePerfect() {
   assert(_table->getPartitions(_column).size() == 2);
   for (const auto& part: _table->getPartitions(_column)) {
     if (part.start == 0) {
-      auto fs = dynamic_cast<FixedStorage*>(const_cast<AStorage*>(part.storage));
-      auto ds = dynamic_cast<OrderedDictionary<dis_int>*>(const_cast<ADictionary*>(part.dict));
+      auto fs = static_cast<FixedStorage*>(const_cast<AStorage*>(part.storage));
+      auto ds = static_cast<OrderedDictionary<dis_int>*>(const_cast<ADictionary*>(part.dict));
       assert(fs && ds);
       value_id_t vid = ds->getSubstitute(_value);
       for (std::size_t i=0, real_pos=part.start, e=fs->rows(); i < e; ++i, ++real_pos) {
@@ -105,8 +88,8 @@ void ScanOperator::executePerfect() {
       }
     }
     else {
-      auto fs = dynamic_cast<FixedStorage*>(const_cast<AStorage*>(part.storage));
-      auto us = dynamic_cast<UnorderedDictionary<dis_int>*>(const_cast<ADictionary*>(part.dict));
+      auto fs = static_cast<FixedStorage*>(const_cast<AStorage*>(part.storage));
+      auto us = static_cast<UnorderedDictionary<dis_int>*>(const_cast<ADictionary*>(part.dict));
       assert(fs && us);
       value_id_t vid = us->getSubstitute(_value);
       for (std::size_t i=0, real_pos=part.start, e=fs->rows(); i < e; ++i, ++real_pos) {
