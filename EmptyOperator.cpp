@@ -13,7 +13,7 @@ EmptyOperator::EmptyOperator(ATable* table, std::size_t column) : _table(table),
 
 void EmptyOperator::execute() {
   EmptyOperatorImpl o;
-  for (const auto& part : _table->getPartitions(_column)) {
+  for (const auto& part : _table->getVerticalPartitions(_column)) {
     o.execute(const_cast<ATable*>(part.table), const_cast<AStorage*>(part.storage),
               const_cast<ADictionary*>(part.dict));
   }
@@ -21,7 +21,7 @@ void EmptyOperator::execute() {
 
 void EmptyOperator::executeFallback() {
   EmptyOperatorImpl o;
-  for (const auto& part : _table->getPartitions(_column)) {
+  for (const auto& part : _table->getVerticalPartitions(_column)) {
     o.execute_fallback(const_cast<ATable*>(part.table), const_cast<AStorage*>(part.storage),
                        const_cast<ADictionary*>(part.dict));
   }

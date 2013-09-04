@@ -19,7 +19,7 @@ FullOperator::FullOperator(ATable* table, std::size_t column) : _table(table), _
 
 void FullOperator::execute() {
   FullOperatorImpl o;
-  for (const auto& part : _table->getPartitions(_column)) {
+  for (const auto& part : _table->getVerticalPartitions(_column)) {
     o.execute(const_cast<ATable*>(part.table), const_cast<AStorage*>(part.storage),
               const_cast<ADictionary*>(part.dict));
   }
@@ -27,7 +27,7 @@ void FullOperator::execute() {
 
 void FullOperator::executeFallback() {
   FullOperatorImpl o;
-  for (const auto& part : _table->getPartitions(_column)) {
+  for (const auto& part : _table->getVerticalPartitions(_column)) {
     o.execute_fallback(const_cast<ATable*>(part.table), const_cast<AStorage*>(part.storage),
                        const_cast<ADictionary*>(part.dict));
   }

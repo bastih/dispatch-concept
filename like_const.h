@@ -22,7 +22,9 @@ struct NonConst<T const&&> {
 };  // by rvalue-reference
 
 template <typename TConstReturn, class TObj, typename... TArgs>
-typename NonConst<TConstReturn>::type likeConstVersion(TObj const* obj, TConstReturn (TObj::*memFun)(TArgs...) const,
-                                                       TArgs... args) {
-  return const_cast<typename NonConst<TConstReturn>::type>((obj->*memFun)(args...));
+typename NonConst<TConstReturn>::type likeConstVersion(
+    TObj const* obj, TConstReturn (TObj::*memFun)(TArgs...) const,
+    TArgs... args) {
+  return const_cast<typename NonConst<TConstReturn>::type>(
+      (obj->*memFun)(args...));
 }

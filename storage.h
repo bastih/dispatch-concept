@@ -9,7 +9,7 @@
 
 #include <boost/container/flat_map.hpp>
 #include <boost/dynamic_bitset.hpp>
-
+#include "debug.hpp"
 #include "dispatch.h"
 #include "storage_types.h"
 #include "like_const.h"
@@ -17,6 +17,8 @@
 
 #define ALL(var) std::begin(var), std::end(var)
 #define _AUTO(var) decltype(*std::begin(var))
+#define likely(x) __builtin_expect(!!(x), 1)
+#define unlikely(x) __builtin_expect(!!(x), 0)
 
 using value_id_t = std::uint64_t;
 
@@ -54,15 +56,17 @@ class OrderedDictionary final : public BaseDictionary<T> {
     return std::distance(std::begin(_values), it);
   }
 
-  T getValue(const value_id_t& value_id) const override { return _values.at(value_id); }
+  T getValue(const value_id_t& value_id) const override {
+    return _values.at(value_id);
+  }
 
-  std::string getValueString(const value_id_t vid) const override { return std::to_string(getValue(vid)); }
+  std::string getValueString(const value_id_t vid) const override {
+    return std::to_string(getValue(vid));
+  }
 
  private:
   std::vector<T> _values;
 };
-
-#include "debug.hpp"
 
 template <typename T>
 class UnorderedDictionary final : public BaseDictionary<T> {
@@ -73,19 +77,19 @@ class UnorderedDictionary final : public BaseDictionary<T> {
     auto iter = _index.insert(std::make_pair(value, _values.size()));
     if (iter.second) {
       _values.push_back(value);
-      // debug("putting in value", value);
-      // debug(iter.first->second);
-      // debug(_values.size());
-      // debug("returning", iter.first->second);
     }
     return iter.first->second;
   }
 
   value_id_t getSubstitute(const T& value) override { return _index[value]; }
 
-  T getValue(const value_id_t& value_id) const override { return _values.at(value_id); }
+  T getValue(const value_id_t& value_id) const override {
+    return _values.at(value_id);
+  }
 
-  std::string getValueString(const value_id_t vid) const override { return std::to_string(getValue(vid)); }
+  std::string getValueString(const value_id_t vid) const override {
+    return std::to_string(getValue(vid));
+  }
 
  private:
   std::vector<T> _values;
@@ -99,9 +103,6 @@ class AStorage : public Typed {
   virtual value_id_t get(std::size_t x) const = 0;
   virtual std::size_t rows() const = 0;
 };
-
-#define likely(x) __builtin_expect(!!(x), 1)
-#define unlikely(x) __builtin_expect(!!(x), 0)
 
 class DefaultValueCompressedStorage : public AStorage {
  public:
@@ -122,6 +123,7 @@ class DefaultValueCompressedStorage : public AStorage {
       _exceptions[x] = vid;
     }
   }
+
   value_id_t get(std::size_t x) const {
     if (unlikely(_exception_positions[x]))
       return _exceptions.at(x);
@@ -129,19 +131,22 @@ class DefaultValueCompressedStorage : public AStorage {
       return _default_value;
   }
 
-  void createPositionList(value_id_t vid, std::size_t offset, std::vector<std::size_t>& positions) {
+  void createPositionList(value_id_t vid, std::size_t offset,
+                          std::vector<std::size_t>& positions) {
     if (likely(vid == _default_value))
       createPositionListFromDefault(offset, positions);
     else
       createPositionListForException(vid, offset, positions);
   }
 
-  void createPositionListFromDefault(std::size_t offset, std::vector<std::size_t>& positions) const {
+  void createPositionListFromDefault(
+      std::size_t offset, std::vector<std::size_t>& positions) const {
     std::size_t start = _exception_positions.find_first();
     std::size_t set_bit_pos;
     std::vector<Range> ranges;
     std::size_t sum_new_bits = 0;
-    while ((set_bit_pos = _exception_positions.find_next(start)) != boost::dynamic_bitset<>::npos) {
+    while ((set_bit_pos = _exception_positions.find_next(start)) !=
+           boost::dynamic_bitset<>::npos) {
       std::size_t num_new_bits = set_bit_pos - start;
       sum_new_bits += num_new_bits;
       ranges.emplace_back(start, set_bit_pos);
@@ -149,11 +154,14 @@ class DefaultValueCompressedStorage : public AStorage {
     }
     positions.resize(positions.size() + sum_new_bits);
     for (const auto& range : ranges) {
-      std::iota(positions.begin() + offset + range._start, positions.begin() + offset + range._stop,
+      std::iota(positions.begin() + offset + range._start,
+                positions.begin() + offset + range._stop,
                 range._start + offset);
     }
   }
-  void createPositionListForException(value_id_t vid, std::size_t offset, std::vector<std::size_t>& positions) const {
+  void createPositionListForException(
+      value_id_t vid, std::size_t offset,
+      std::vector<std::size_t>& positions) const {
     for (const auto& kv : _exceptions) {
       if (kv.second == vid) {
         positions.push_back(offset + kv.first);
@@ -211,7 +219,9 @@ class BitStorage final : public AStorage {
     return result.to_ulong();
   }
 
-  std::size_t rows() const override { return _values.size() * values_per_interval; }
+  std::size_t rows() const override {
+    return _values.size() * values_per_interval;
+  }
 
  private:
   std::vector<std::uint64_t> _values;
@@ -238,25 +248,28 @@ class ATable : public Typed {
   ~ATable();
   virtual std::size_t width() const = 0;
   virtual std::size_t height() const = 0;
-  virtual partitions_t getPartitions(std::size_t column) const = 0;
+  virtual partitions_t getVerticalPartitions(std::size_t column) const = 0;
   virtual partitions_t getHorizontalPartitions(std::size_t row) const = 0;
   /// BAAAAD GURL
   template <typename T>
   T getValue(std::size_t col, std::size_t row) const {
     auto val_dct = getValueId(col, row);
-    return static_cast<const BaseDictionary<T>*>(val_dct.dict)->getValue(val_dct.vid);
+    return static_cast<const BaseDictionary<T>*>(val_dct.dict)
+        ->getValue(val_dct.vid);
   }
   virtual void cacheOffsets() {}
-  virtual value_id_with_dict_t getValueId(std::size_t col, std::size_t row) const = 0;
+  virtual value_id_with_dict_t getValueId(std::size_t col,
+                                          std::size_t row) const = 0;
 };
 
 /* HYBRID DATABASE */
 class Vertical : public ATable {
  public:
-  Vertical(std::vector<std::unique_ptr<ATable> > parts) : _parts(std::move(parts)) {}
+  Vertical(std::vector<std::unique_ptr<ATable> > parts)
+      : _parts(std::move(parts)) {}
   std::size_t width() const override;
   std::size_t height() const override { return _parts.front()->height(); }
-  partitions_t getPartitions(std::size_t column) const override;
+  partitions_t getVerticalPartitions(std::size_t column) const override;
   partitions_t getHorizontalPartitions(std::size_t row) const override;
 
   /// BAD GURRRRRL
@@ -281,14 +294,16 @@ class Vertical : public ATable {
 
 class Horizontal : public ATable {
  public:
-  Horizontal(std::vector<std::unique_ptr<ATable> > parts) : _parts(std::move(parts)) {}
+  Horizontal(std::vector<std::unique_ptr<ATable> > parts)
+      : _parts(std::move(parts)) {}
   std::size_t width() const override;
   std::size_t height() const override {
-    return std::accumulate(ALL(_parts), 0u, [](std::size_t r, _AUTO(_parts) part) {
+    return std::accumulate(ALL(_parts),
+                           0u, [](std::size_t r, _AUTO(_parts) part) {
       return r + part->height();
     });
   }
-  partitions_t getPartitions(std::size_t column) const;
+  partitions_t getVerticalPartitions(std::size_t column) const;
   partitions_t getHorizontalPartitions(std::size_t row) const;
 
   void cacheOffsets() override {
@@ -302,7 +317,8 @@ class Horizontal : public ATable {
   std::vector<std::size_t> _cached_offsets;
 
   /// BAD GURRLLL
-  value_id_with_dict_t getValueId(std::size_t col, std::size_t row) const override {
+  value_id_with_dict_t getValueId(std::size_t col, std::size_t row) const
+      override {
     std::size_t part = 0;
     std::size_t offset = 0;
     for (std::size_t coffset : _cached_offsets) {
@@ -334,9 +350,10 @@ class Table final : public ATable {
       : _storage(std::move(s)), _dictionary(std::move(d)) {}
   std::size_t width() const override;
   std::size_t height() const override { return _storage->rows(); }
-  partitions_t getPartitions(std::size_t column) const override;
+  partitions_t getVerticalPartitions(std::size_t column) const override;
   partitions_t getHorizontalPartitions(std::size_t row) const override;
-  value_id_with_dict_t getValueId(std::size_t col, std::size_t row) const override {
+  value_id_with_dict_t getValueId(std::size_t col, std::size_t row) const
+      override {
     assert(col == 0);
     // usually we would have to pass col too, but we currently assume
     // single-width tables

@@ -14,7 +14,8 @@
 /// For errors generally related to tracing
 class TracingError : public std::runtime_error {
  public:
-  TracingError(std::string what) : std::runtime_error("TracingError: " + what) {}
+  TracingError(std::string what)
+      : std::runtime_error("TracingError: " + what) {}
 };
 
 #ifdef USE_PAPI_TRACE
@@ -57,19 +58,25 @@ class PapiTracer {
   template <typename Func, typename ActivityT, typename... Args>
   static void handle(Func function, ActivityT activity, Args&&... args) {
     int retval = function(std::forward<Args>(args)...);
-    if (retval != PAPI_OK) throw TracingError(std::string(activity) + " failed: " + PAPI_strerror(retval));
+    if (retval != PAPI_OK)
+      throw TracingError(std::string(activity) + " failed: " +
+                         PAPI_strerror(retval));
   }
 
   static void initialize() {
     static bool initialized = false;
     if (!initialized) {
-      if (PAPI_library_init(PAPI_VER_CURRENT) != PAPI_VER_CURRENT) throw TracingError("PAPI could not be initialized");
+      if (PAPI_library_init(PAPI_VER_CURRENT) != PAPI_VER_CURRENT)
+        throw TracingError("PAPI could not be initialized");
       initialized = true;
     }
   }
 
  public:
-  inline PapiTracer() : _eventSet(PAPI_NULL), _disabled(false), _running(false) { PapiTracer::initialize(); }
+  inline PapiTracer()
+      : _eventSet(PAPI_NULL), _disabled(false), _running(false) {
+    PapiTracer::initialize();
+  }
 
   inline ~PapiTracer() { stop(); }
 
@@ -94,7 +101,9 @@ class PapiTracer {
     if (_counters.empty()) throw std::runtime_error("No events set");
 
     for (const auto& eventName : _counters) {
-      handle(PAPI_add_named_event, "Adding event " + eventName + " to event set", _eventSet, (char*)eventName.c_str());
+      handle(PAPI_add_named_event,
+             "Adding event " + eventName + " to event set", _eventSet,
+             (char*)eventName.c_str());
     }
 
     _results.clear();
@@ -123,7 +132,9 @@ class PapiTracer {
     if (_disabled) return 0ull;
 
     auto item = std::find(_counters.begin(), _counters.end(), eventName);
-    if (item == _counters.end()) throw TracingError("Trying to access unregistered event '" + eventName + "'");
+    if (item == _counters.end())
+      throw TracingError("Trying to access unregistered event '" + eventName +
+                         "'");
     auto index = std::distance(_counters.begin(), item);
     return _results.at(index);
   }
@@ -147,7 +158,9 @@ class FallbackTracer {
   std::chrono::time_point<std::chrono::high_resolution_clock> _start;
 
  public:
-  inline void addEvent(std::string eventName) { _counters.push_back(eventName); }
+  inline void addEvent(std::string eventName) {
+    _counters.push_back(eventName);
+  }
 
   inline void start() {
     if (_counters.empty()) throw TracingError("No events set");
@@ -157,12 +170,15 @@ class FallbackTracer {
 
   inline void stop() {
     auto stop = std::chrono::high_resolution_clock::now();
-    _result = std::chrono::duration_cast<std::chrono::microseconds>(stop - _start).count();
+    _result = std::chrono::duration_cast<std::chrono::microseconds>(
+        stop - _start).count();
   }
 
   inline long long value(const std::string& eventName) const {
     auto item = find(_counters.begin(), _counters.end(), eventName);
-    if (item == _counters.end()) throw TracingError("Trying to access unregistered event '" + eventName + "' ");
+    if (item == _counters.end())
+      throw TracingError("Trying to access unregistered event '" + eventName +
+                         "' ");
     return _result;
   }
 };

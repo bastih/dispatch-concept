@@ -34,7 +34,8 @@ void times_measure(std::string name, F&& f, std::size_t i = 40) {
     auto& times = kv.second;
     std::sort(times.begin(), times.end());
     std::uint64_t sum = std::accumulate(times.begin(), times.end(), 0ull);
-    debug(name, kv.first, "avg", static_cast<std::uint64_t>(sum / i), "min", times.front(), "max", times.back(),
-          "warmup", pt1.value("PAPI_TOT_CYC"));
+    debug(name, kv.first, "avg", static_cast<std::uint64_t>(sum / i), "min",
+          times.front(), "max", times.back(), "warmup",
+          pt1.value("PAPI_TOT_CYC"));
   }
 }

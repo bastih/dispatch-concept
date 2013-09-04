@@ -20,10 +20,10 @@ std::size_t Vertical::width() const {
   });
 }
 
-partitions_t Vertical::getPartitions(std::size_t column) const {
+partitions_t Vertical::getVerticalPartitions(std::size_t column) const {
   std::size_t part_index, column_offset;
   std::tie(part_index, column_offset) = partForColumn(column);
-  return _parts[part_index]->getPartitions(column_offset);
+  return _parts[part_index]->getVerticalPartitions(column_offset);
 }
 
 partitions_t Vertical::getHorizontalPartitions(std::size_t row) const {
@@ -62,11 +62,11 @@ partitions_t Horizontal::getHorizontalPartitions(std::size_t row) const {
   return _parts[part_index]->getHorizontalPartitions(row_offset);
 }
 
-partitions_t Horizontal::getPartitions(std::size_t column) const {
+partitions_t Horizontal::getVerticalPartitions(std::size_t column) const {
   partitions_t r;
   std::size_t height_offset = 0u;
   for (const auto& part : _parts) {
-    auto p = part->getPartitions(column);
+    auto p = part->getVerticalPartitions(column);
     for (partition_t& subpart : p) {
       subpart.start = height_offset;
       height_offset += subpart.stop;
@@ -78,7 +78,7 @@ partitions_t Horizontal::getPartitions(std::size_t column) const {
 }
 
 std::size_t Table::width() const { return 1; }
-partitions_t Table::getPartitions(std::size_t column) const {
+partitions_t Table::getVerticalPartitions(std::size_t column) const {
   assert(column < width());
   return {partition_t{0, _storage->rows(), column, this, _storage.get(), _dictionary.get()}};
 }

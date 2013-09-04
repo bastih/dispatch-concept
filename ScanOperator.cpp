@@ -45,7 +45,7 @@ void ScanOperator::execute() {
   ScanOperatorImpl<dis_int> o;
   o.needle = _value;
 
-  for (const auto& part : _table->getPartitions(_column)) {
+  for (const auto& part : _table->getVerticalPartitions(_column)) {
     o.offset = part.start;
     o.execute(const_cast<ATable*>(part.table), const_cast<AStorage*>(part.storage),
               const_cast<ADictionary*>(part.dict));
@@ -55,7 +55,7 @@ void ScanOperator::execute() {
 void ScanOperator::executeFallback() {
   ScanOperatorImpl<dis_int> o;
   o.needle = _value;
-  for (const auto& part : _table->getPartitions(_column)) {
+  for (const auto& part : _table->getVerticalPartitions(_column)) {
     o.offset = part.start;
     o.execute_fallback(const_cast<ATable*>(part.table), const_cast<AStorage*>(part.storage),
                        const_cast<ADictionary*>(part.dict));
@@ -73,8 +73,8 @@ void ScanOperator::executeAbstract() {
 
 void ScanOperator::executePerfect() {
   std::vector<size_t> positions;
-  assert(_table->getPartitions(_column).size() == 2);
-  for (const auto& part : _table->getPartitions(_column)) {
+  assert(_table->getVerticalPartitions(_column).size() == 2);
+  for (const auto& part : _table->getVerticalPartitions(_column)) {
     if (part.start == 0) {
       auto fs = static_cast<FixedStorage*>(const_cast<AStorage*>(part.storage));
       auto ds = static_cast<OrderedDictionary<dis_int>*>(const_cast<ADictionary*>(part.dict));

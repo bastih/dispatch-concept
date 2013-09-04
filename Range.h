@@ -14,9 +14,13 @@ class Range {
 
     explicit RangeIter(std::size_t val) : _value(val) {}
 
-    inline bool operator==(const RangeIter& other) { return _value == other._value; }
+    inline bool operator==(const RangeIter& other) {
+      return _value == other._value;
+    }
 
-    inline bool operator!=(const RangeIter& other) { return _value != other._value; }
+    inline bool operator!=(const RangeIter& other) {
+      return _value != other._value;
+    }
 
     inline size_t operator*() { return _value; }
 
