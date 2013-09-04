@@ -9,6 +9,7 @@ class FullOperator {
   FullOperator(ATable* table, std::size_t column);
   void execute();
   void executeFallback();
+
  private:
   ATable* _table;
   std::size_t _column;

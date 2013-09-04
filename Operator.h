@@ -7,11 +7,16 @@
 
 // Called by SFINAE if reserve does not exist or is not accessible
 template <typename TP, typename... ARGS>
-constexpr auto has_special(__attribute__((unused)) TP t, __attribute__((unused)) ARGS... args) -> decltype(t->execute_special(std::forward<ARGS>(args)...), bool()) { return true; }
+constexpr auto has_special(__attribute__((unused)) TP t, __attribute__((unused)) ARGS... args)
+    -> decltype(t -> execute_special(std::forward<ARGS>(args)...), bool()) {
+  return true;
+}
 
 // Used as fallback when SFINAE culls the template method
 template <typename... ARGS>
-constexpr bool has_special(ARGS...) { return false; }
+constexpr bool has_special(ARGS...) {
+  return false;
+}
 
 template <typename T, typename S, typename D>
 bool matchingTypeIds(ATable* t, AStorage* s, ADictionary* d) {
@@ -21,15 +26,16 @@ bool matchingTypeIds(ATable* t, AStorage* s, ADictionary* d) {
 class ImplementationFound {};
 
 // Call specialized implementation when available
-// Just slightly ugly: enable_if is valid when: op.execute_special(...) is overloaded exactly for tall params
-// through this specialization, we don't need a fallback execute_special for abstract base classes
-template <class OP,
-          class TABLE,
-          class STORAGE,
-          class DICT>
+// Just slightly ugly: enable_if is valid when: op.execute_special(...) is
+// overloaded exactly for tall params
+// through this specialization, we don't need a fallback execute_special for
+// abstract base classes
+template <class OP, class TABLE, class STORAGE, class DICT>
 /* restricting unnamed parameter */
-//typename std::enable_if<has_special(HasExecuteSpecial<OP, void, TABLE*, STORAGE*, DICT*>::value, int>::type = 0>
-auto call_special(OP& op, TABLE* table, STORAGE* store, DICT* dict) -> typename std::enable_if<has_special((OP*) 0, (TABLE*) 0, (STORAGE*) 0, (DICT*) 0), void>::type {
+    // typename std::enable_if<has_special(HasExecuteSpecial<OP, void, TABLE*,
+    // STORAGE*, DICT*>::value, int>::type = 0>
+    auto call_special(OP& op, TABLE* table, STORAGE* store, DICT* dict)
+        -> typename std::enable_if<has_special((OP*)0, (TABLE*)0, (STORAGE*)0, (DICT*)0), void>::type {
   /// extracting table/store/dict actual typeIds through virtual function calls
   /// and compare to what we need for thise combination of types
   // op.checks++;
@@ -40,21 +46,20 @@ auto call_special(OP& op, TABLE* table, STORAGE* store, DICT* dict) -> typename 
   }
 }
 
-template <class OP,
-          class TABLE,
-          class STORAGE,
-          class DICT>
-//typename std/::enable_if<!HasExecuteSpecial<OP, void, TABLE*, STORAGE*, DICT*>::value, int>::type = 0>
-// Is valid when there is no viable overload in op for the given
-// params -- don't do anything, there is no match here
-auto call_special(OP&, TABLE*, STORAGE*, DICT*) -> typename std::enable_if<not has_special((OP*) 0, (TABLE*) 0, (STORAGE*) 0, (DICT*) 0), void>::type {}
+template <class OP, class TABLE, class STORAGE, class DICT>
+// typename std/::enable_if<!HasExecuteSpecial<OP, void, TABLE*, STORAGE*,
+    // DICT*>::value, int>::type = 0>
+    // Is valid when there is no viable overload in op for the given
+    // params -- don't do anything, there is no match here
+    auto call_special(OP&, TABLE*, STORAGE*, DICT*)
+        -> typename std::enable_if<not has_special((OP*)0, (TABLE*)0, (STORAGE*)0, (DICT*)0), void>::type {}
 
 template <class OP>
 struct choose_special {
   OP& op;
   ATable* table;
   AStorage* store;
-  ADictionary * dict;
+  ADictionary* dict;
 
   template <typename SEQUENCE>
   inline void operator()() {
@@ -73,18 +78,19 @@ class Operator {
   virtual ~Operator() {}
   std::size_t checks = 0;
   void execute(ATable* tab, AStorage* store, ADictionary* dict) {
-    choose_special<OperatorType> ci { *static_cast<OperatorType*>(this), tab, store, dict };
+    choose_special<OperatorType> ci{*static_cast<OperatorType*>(this), tab, store, dict};
     try {
       // generates the cartesian product of all types and per
       // combination SEQUENCE, invokes choose_impl<SEQUENCE>()
       typedef boost::mpl::vector<table_types, storage_types, dictionary_types> types;
       boost::mpl::cartesian_product<types>(ci);
-    } catch (const ImplementationFound&) {
+    }
+    catch (const ImplementationFound&) {
       return;
     }
 
     execute_fallback(tab, store, dict);
   }
-  
+
   virtual void execute_fallback(ATable*, AStorage*, ADictionary*) = 0;
 };

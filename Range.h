@@ -14,25 +14,15 @@ class Range {
 
     explicit RangeIter(std::size_t val) : _value(val) {}
 
-    inline bool operator==(const RangeIter& other) {
-      return _value == other._value;
-    }
+    inline bool operator==(const RangeIter& other) { return _value == other._value; }
 
-    inline bool operator!=(const RangeIter& other) {
-      return _value != other._value;
-    }
+    inline bool operator!=(const RangeIter& other) { return _value != other._value; }
 
-    inline size_t operator*() {
-      return _value;
-    }
+    inline size_t operator*() { return _value; }
 
-    inline void operator++() {
-      _value++;
-    }
-   
-    inline void operator--() {
-      _value++;
-    }
+    inline void operator++() { _value++; }
+
+    inline void operator--() { _value++; }
 
    private:
     std::size_t _value;
@@ -45,5 +35,6 @@ class Range {
 
   const std::size_t _start = 0;
   const std::size_t _stop;
+
  private:
 };

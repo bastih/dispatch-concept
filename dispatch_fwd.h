@@ -16,7 +16,10 @@ class RawTable;
 
 class FixedStorage;
 class DefaultValueCompressedStorage;
-template <int> class BitStorage;
+template <int>
+class BitStorage;
 
-template <typename T> class OrderedDictionary;
-template <typename T> class UnorderedDictionary;
+template <typename T>
+class OrderedDictionary;
+template <typename T>
+class UnorderedDictionary;

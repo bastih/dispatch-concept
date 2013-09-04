@@ -11,8 +11,8 @@
 #define CATCH_CONFIG_RUNNER
 #include "catch.hpp"
 
-int main (int argc, char* const argv[]) {
-  int result = Catch::Session().run( argc, argv );
+int main(int argc, char* const argv[]) {
+  int result = Catch::Session().run(argc, argv);
 
   debug("Generating");
   auto somestore = makeStore();
@@ -33,53 +33,85 @@ int main (int argc, char* const argv[]) {
   {
     debug("MaterializingScanOperator");
     MaterializingScanOperator so(somestore.get(), 3);
-    times_measure("dispatch", [&so] () { so.execute(); });
-    times_measure("fallback", [&so] () { so.executeFallback(); });
-    times_measure("abstract", [&so] () { so.executeAbstract(); });
+    times_measure("dispatch", [&so]() {
+      so.execute();
+    });
+    times_measure("fallback", [&so]() {
+      so.executeFallback();
+    });
+    times_measure("abstract", [&so]() {
+      so.executeAbstract();
+    });
   }
 
-  
   {
     debug("EmptyOperator");
     EmptyOperator so(somestore.get(), 1);
-    times_measure("dispatch", [&] () { so.execute(); });
-    times_measure("fallback", [&] () { so.executeFallback();  });
+    times_measure("dispatch", [&]() {
+      so.execute();
+    });
+    times_measure("fallback", [&]() {
+      so.executeFallback();
+    });
   }
 
   {
     debug("FullOperator");
     FullOperator so(somestore.get(), 1);
-    times_measure("dispatch", [&] () { so.execute(); });
-    times_measure("fallback", [&] () { so.executeFallback(); });
+    times_measure("dispatch", [&]() {
+      so.execute();
+    });
+    times_measure("fallback", [&]() {
+      so.executeFallback();
+    });
   }
 
   {
     debug("ScanOperator on FixedLengthStorage");
     ScanOperator so(somestore.get(), 1, value);
-    times_measure("dispatch", [&] () { so.execute(); });
-    times_measure("fallback", [&] () { so.executeFallback(); });
-    times_measure("abstract", [&] () { so.executeAbstract(); });
-    times_measure("perfect ", [&] () { so.executePerfect(); });
+    times_measure("dispatch", [&]() {
+      so.execute();
+    });
+    times_measure("fallback", [&]() {
+      so.executeFallback();
+    });
+    times_measure("abstract", [&]() {
+      so.executeAbstract();
+    });
+    times_measure("perfect ", [&]() {
+      so.executePerfect();
+    });
   }
 
-  auto default_value = ((BaseDictionary<dis_int>*) somestore->getValueId(3, 0).dict)->getValue(DEFAULT_VID);
+  auto default_value = ((BaseDictionary<dis_int>*)somestore->getValueId(3, 0).dict)->getValue(DEFAULT_VID);
   {
     debug("ScanOperator on default storage (default value)", default_value);
     ScanOperator so(somestore.get(), 3, default_value);
-    times_measure("dispatch", [&] () { so.execute(); });
-    times_measure("fallback", [&] () { so.executeFallback(); });
-    times_measure("abstract", [&] () { so.executeAbstract(); });
+    times_measure("dispatch", [&]() {
+      so.execute();
+    });
+    times_measure("fallback", [&]() {
+      so.executeFallback();
+    });
+    times_measure("abstract", [&]() {
+      so.executeAbstract();
+    });
   }
-  auto other_value = ((BaseDictionary<dis_int>*) somestore->getValueId(3, 0).dict)->getValue(DEFAULT_VID)+1;
+  auto other_value = ((BaseDictionary<dis_int>*)somestore->getValueId(3, 0).dict)->getValue(DEFAULT_VID) + 1;
   {
     debug("ScanOperator on default storage (other value)", other_value);
     ScanOperator so(somestore.get(), 3, other_value);
-    times_measure("dispatch", [&] () { so.execute(); });
-    times_measure("fallback", [&] () { so.executeFallback(); });
-    times_measure("abstract", [&] () { so.executeAbstract(); });
+    times_measure("dispatch", [&]() {
+      so.execute();
+    });
+    times_measure("fallback", [&]() {
+      so.executeFallback();
+    });
+    times_measure("abstract", [&]() {
+      so.executeAbstract();
+    });
   }
 
-  
   /*std::cout << store->get(0) << std::endl;
     std::cout << store->get(2) << std::endl;
     std::cout << store->get(1) << std::endl;
@@ -92,4 +124,3 @@ int main (int argc, char* const argv[]) {
     o.execute(tab,store, dict);*/
   return 0;
 }
-

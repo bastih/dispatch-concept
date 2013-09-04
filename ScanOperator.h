@@ -6,13 +6,14 @@
 class ATable;
 
 class ScanOperator {
-public:
+ public:
   ScanOperator(ATable* t, std::size_t column, dis_int value);
   void execute();
   void executeFallback();
   void executeAbstract();
   void executePerfect();
-private:
+
+ private:
   ATable* _table;
   std::size_t _column;
   dis_int _value;
