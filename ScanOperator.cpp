@@ -23,14 +23,9 @@ class ScanOperatorImpl : public Operator< ScanOperatorImpl<T> > {
   template <typename TAB, template <class> class Dictionary>
   void execute_special(TAB*, DefaultValueCompressedStorage* dv, Dictionary<T>* t) {
     value_id_t vid = t->getSubstitute(needle);
-    
-    for (std::size_t i=0, real_pos=offset, e=fs->rows(); i < e; ++i, ++real_pos) {
-      if (fs->get(i) == vid) {
-        positions.push_back(real_pos);
-      }
-    }
+    dv->createPositionList(vid, offset, positions);
   }
-  
+
   void execute_fallback(ATable*, AStorage* s, ADictionary* d) {
     auto bd = static_cast<BaseDictionary<T>* >(d);
     value_id_t vid = bd->getSubstitute(needle);
@@ -59,6 +54,23 @@ void ScanOperator::execute() {
 
 void ScanOperator::executeFallback() {
   ScanOperatorImpl<dis_int> o;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   o.needle = _value;
   for (const auto& part: _table->getPartitions(_column)) {
     o.offset = part.start;

@@ -6,7 +6,7 @@ PROJECT = dispatch
 #CC = ~/clang-33/bin/clang++
 CC = g++-4.8
 BUILD_FLAGS = -O4 -DNDEBUG 
-COMPILE_OPTIONS = -std=c++11 -Wall -Wextra -Wno-unused-parameter -Wno-padded -D USE_PAPI_TRACE -march=native $(BUILD_FLAGS) -funroll-loops
+COMPILE_OPTIONS = -std=c++11 -Wall -Wextra -Wno-unused-parameter -Wno-padded -march=native $(BUILD_FLAGS) -fomit-frame-pointer
 
 HEADERS =
 LIBS = -lpapi -L/usr/local/lib

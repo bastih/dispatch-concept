@@ -107,10 +107,9 @@ int main () {
     times_measure("dispatch", [&] () { so.execute(); });
     times_measure("fallback", [&] () { so.executeFallback(); });
   }
-  
 
   {
-    debug("ScanOperator");
+    debug("ScanOperator on FixedLengthStorage");
     ScanOperator so(somestore.get(), 1, value);
     times_measure("dispatch", [&] () { so.execute(); });
     times_measure("fallback", [&] () { so.executeFallback(); });
@@ -118,14 +117,22 @@ int main () {
     times_measure("perfect ", [&] () { so.executePerfect(); });
   }
 
+  auto default_value = ((BaseDictionary<dis_int>*) somestore->getValueId(3, 0).dict)->getValue(DEFAULT_VID);
   {
-    debug("ScanOperator on default storage");
-    ScanOperator so(somestore.get(), 3, value);
+    debug("ScanOperator on default storage (default value)", default_value);
+    ScanOperator so(somestore.get(), 3, default_value);
     times_measure("dispatch", [&] () { so.execute(); });
     times_measure("fallback", [&] () { so.executeFallback(); });
     times_measure("abstract", [&] () { so.executeAbstract(); });
   }
-  
+  auto other_value = ((BaseDictionary<dis_int>*) somestore->getValueId(3, 0).dict)->getValue(DEFAULT_VID)+1;
+  {
+    debug("ScanOperator on default storage (other value)", other_value);
+    ScanOperator so(somestore.get(), 3, other_value);
+    times_measure("dispatch", [&] () { so.execute(); });
+    times_measure("fallback", [&] () { so.executeFallback(); });
+    times_measure("abstract", [&] () { so.executeAbstract(); });
+  }
   /*std::cout << store->get(0) << std::endl;
     std::cout << store->get(2) << std::endl;
     std::cout << store->get(1) << std::endl;

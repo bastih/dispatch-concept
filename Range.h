@@ -42,7 +42,8 @@ class Range {
   Range(std::size_t start, std::size_t stop) : _start(start), _stop(stop) {}
   RangeIter begin() const { return RangeIter(_start); }
   RangeIter end() const { return RangeIter(_stop); }
- private:
+
   const std::size_t _start = 0;
   const std::size_t _stop;
+ private:
 };
