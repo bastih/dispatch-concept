@@ -9,18 +9,17 @@
 
 #include <boost/container/flat_map.hpp>
 #include <boost/dynamic_bitset.hpp>
-#include "debug.hpp"
+
 #include "dispatch.h"
 #include "storage_types.h"
-#include "like_const.h"
-#include "Range.h"
+#include "helpers/Range.h"
 
 #define ALL(var) std::begin(var), std::end(var)
 #define _AUTO(var) decltype(*std::begin(var))
 #define likely(x) __builtin_expect(!!(x), 1)
 #define unlikely(x) __builtin_expect(!!(x), 0)
 
-using value_id_t = std::uint64_t;
+using value_id_t = std::uint32_t;
 
 namespace std {
 inline std::string to_string(const std::string& s) { return s; }
@@ -39,6 +38,10 @@ class BaseDictionary : public ADictionary {
   virtual value_id_t add(const T&) = 0;
   virtual value_id_t getSubstitute(const T&) = 0;
   virtual T getValue(const value_id_t&) const = 0;
+  std::string getValueString(const value_id_t vid) const override {
+    return std::to_string(getValue(vid));
+  }
+
 };
 
 template <typename T>
@@ -59,11 +62,6 @@ class OrderedDictionary final : public BaseDictionary<T> {
   T getValue(const value_id_t& value_id) const override {
     return _values.at(value_id);
   }
-
-  std::string getValueString(const value_id_t vid) const override {
-    return std::to_string(getValue(vid));
-  }
-
  private:
   std::vector<T> _values;
 };
@@ -85,10 +83,6 @@ class UnorderedDictionary final : public BaseDictionary<T> {
 
   T getValue(const value_id_t& value_id) const override {
     return _values.at(value_id);
-  }
-
-  std::string getValueString(const value_id_t vid) const override {
-    return std::to_string(getValue(vid));
   }
 
  private:

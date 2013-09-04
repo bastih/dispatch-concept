@@ -1,6 +1,6 @@
 
-#include "debug.hpp"
-#include "measure.h"
+#include "helpers/debug.hpp"
+#include "helpers/measure.h"
 #include "Generator.h"
 
 #include "ScanOperator.h"
