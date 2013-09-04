@@ -26,12 +26,10 @@ bool matchingTypeIds() {
 }
 
 template <class A, class... DISPATCH_ARGS>
-bool matchingTypeIds(const Typed * a, DISPATCH_ARGS... args) {
-  return ((a->getTypeId() == typeId<typename std::remove_pointer<A>::type>())
-          && matchingTypeIds<DISPATCH_ARGS...>(args...));
+bool matchingTypeIds(const Typed* a, DISPATCH_ARGS... args) {
+  return ((a->getTypeId() == typeId<typename std::remove_pointer<A>::type>()) &&
+          matchingTypeIds<DISPATCH_ARGS...>(args...));
 }
-
-
 
 class ImplementationFound {};
 
@@ -44,13 +42,15 @@ template <class OP, class... DISPATCH_ARGS>
 /* restricting unnamed parameter */
     // typename std::enable_if<has_special(HasExecuteSpecial<OP, void, TABLE*,
     // STORAGE*, DICT*>::value, int>::type = 0>
-auto call_special(OP& op, DISPATCH_ARGS... args)
-    -> typename std::enable_if<has_special((OP*) 0, std::forward<DISPATCH_ARGS>(nullptr)...), void>::type {
+    auto call_special(OP& op, DISPATCH_ARGS... args)
+        -> typename std::enable_if<
+              has_special((OP*)0, std::forward<DISPATCH_ARGS>(nullptr)...),
+              void>::type {
   /// extracting table/store/dict actual typeIds through virtual function calls
   /// and compare to what we need for thise combination of types
   // op.checks++;
-   if (matchingTypeIds<DISPATCH_ARGS...>(args...)) {
-     op.execute_special(args...);
+  if (matchingTypeIds<DISPATCH_ARGS...>(args...)) {
+    op.execute_special(args...);
     // UGLY: Exceptions for control flow
     throw ImplementationFound();
   }
@@ -61,51 +61,64 @@ template <class OP, class... DISPATCH_ARGS>
     // DICT*>::value, int>::type = 0>
     // Is valid when there is no viable overload in op for the given
     // params -- don't do anything, there is no match here
-auto call_special(OP& op, DISPATCH_ARGS... args)
-    -> typename std::enable_if<not has_special((OP*) 0, std::forward<DISPATCH_ARGS>(nullptr)...), void>::type {}
+    auto call_special(OP& op, DISPATCH_ARGS... args)
+        -> typename std::enable_if<
+              not has_special((OP*)0, std::forward<DISPATCH_ARGS>(nullptr)...),
+              void>::type {}
 
-template <class OP>
+
+template <int...>
+struct seq {};
+
+template <int N, int... S>
+struct gens : gens<N - 1, N - 1, S...> {};
+
+template <int... S>
+struct gens<0, S...> {
+  typedef seq<S...> type;
+};
+
+template <class OP, int N>
 struct choose_special {
   OP& op;
-  ATable* table;
-  AStorage* store;
-  ADictionary* dict;
+  std::array<Typed*, N> args;
 
   template <typename SEQUENCE>
   inline void operator()() {
-    using TABLE = typename boost::mpl::at_c<SEQUENCE, 0>::type;
-    using STORAGE = typename boost::mpl::at_c<SEQUENCE, 1>::type;
-    using DICT = typename boost::mpl::at_c<SEQUENCE, 2>::type;
-    // cast all operators to their presumed types, so we can invoke
-    // the correct implementation
-    call_special(op, static_cast<TABLE*>(table), static_cast<STORAGE*>(store),
-                 static_cast<DICT*>(dict));
+    call<SEQUENCE>(typename gens<N>::type());
+  }
+
+  template <typename SEQ, int... S>
+  inline void call(seq<S...>) {
+    call_special(op, static_cast<typename boost::mpl::at_c<SEQ, S>::type*>(
+                         std::get<S>(args))...);
   }
 };
 
-typedef boost::mpl::vector<table_types, storage_types, dictionary_types> all_types;
+typedef boost::mpl::vector<table_types, storage_types, dictionary_types>
+    all_types;
 typedef boost::mpl::vector<> empty_;
 typedef boost::mpl::vector<empty_, empty_, empty_> empty_types;
 
-
-template <typename OperatorType, typename types=all_types>
+template <typename OperatorType, typename TYPES = all_types>
 class Operator {
  public:
   virtual ~Operator() {}
-  std::size_t checks = 0;
-  void execute(ATable* tab, AStorage* store, ADictionary* dict) {
-    choose_special<OperatorType> ci{*static_cast<OperatorType*>(this), tab,
-                                    store,                             dict};
+
+  template <typename... ARGS>
+  void execute(ARGS... args) {
+    choose_special<OperatorType, sizeof...(TYPES)> ci{
+        *static_cast<OperatorType*>(this), {args...}};
     try {
       // generates the cartesian product of all types and per
       // combination SEQUENCE, invokes choose_impl<SEQUENCE>()
-      boost::mpl::cartesian_product<types>(ci);
+      boost::mpl::cartesian_product<TYPES>(ci);
     }
     catch (const ImplementationFound&) {
       return;
     }
 
-    execute_fallback(tab, store, dict);
+    execute_fallback(args...);
   }
 
   virtual void execute_fallback(ATable*, AStorage*, ADictionary*) = 0;

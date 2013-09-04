@@ -41,7 +41,6 @@ class BaseDictionary : public ADictionary {
   std::string getValueString(const value_id_t vid) const override {
     return std::to_string(getValue(vid));
   }
-
 };
 
 template <typename T>
@@ -62,6 +61,7 @@ class OrderedDictionary final : public BaseDictionary<T> {
   T getValue(const value_id_t& value_id) const override {
     return _values.at(value_id);
   }
+
  private:
   std::vector<T> _values;
 };
