@@ -4,8 +4,8 @@
 PROJECT = dispatch
 # Compiler
 #CC = ~/clang-33/bin/clang++
-#CC = g++-4.8 -O4
-CC = ~/polly/llvm_build/bin/clang++ -Xclang -load -Xclang ~/polly/llvm_build/lib/LLVMPolly.so -O3 -mllvm -polly -mllvm -polly-vectorizer=polly
+CC = g++-4.8 -O4
+#CC = ~/polly/llvm_build/bin/clang++ -Xclang -load -Xclang ~/polly/llvm_build/lib/LLVMPolly.so -O3 -mllvm -polly -mllvm -polly-vectorizer=polly
 #CC = ~/polly/llvm_build/bin/clang++ -O3
 BUILD_FLAGS = -DNDEBUG -I thirdparty/catch/include
 COMPILE_OPTIONS = -std=c++11 -Wall -Wextra -Wno-unused-parameter -Wno-padded -march=native $(BUILD_FLAGS) -D USE_PAPI_TRACE
