@@ -21,8 +21,9 @@ constexpr bool has_special(ARGS...) {
 
 template <typename T, typename S, typename D>
 bool matchingTypeIds(ATable* t, AStorage* s, ADictionary* d) {
-  return (t->getTypeId() == typeId<T>()) && (s->getTypeId() == typeId<S>()) &&
-         (d->getTypeId() == typeId<D>());
+  return (t->getTypeId() == typeId<T>()) &&
+      (s->getTypeId() == typeId<S>()) &&
+      (d->getTypeId() == typeId<D>());
 }
 
 class ImplementationFound {};
@@ -79,7 +80,12 @@ struct choose_special {
   }
 };
 
-template <typename OperatorType>
+typedef boost::mpl::vector<table_types, storage_types, dictionary_types> all_types;
+typedef boost::mpl::vector<> empty_;
+typedef boost::mpl::vector<empty_, empty_, empty_> empty_types;
+
+
+template <typename OperatorType, typename types=all_types>
 class Operator {
  public:
   virtual ~Operator() {}
@@ -90,8 +96,6 @@ class Operator {
     try {
       // generates the cartesian product of all types and per
       // combination SEQUENCE, invokes choose_impl<SEQUENCE>()
-      typedef boost::mpl::vector<table_types, storage_types, dictionary_types>
-          types;
       boost::mpl::cartesian_product<types>(ci);
     }
     catch (const ImplementationFound&) {
