@@ -9,7 +9,7 @@
 #include <vector>
 #include <string>
 #include <stdexcept>
-
+#include <chrono>
 /// For errors generally related to tracing
 class TracingError : public std::runtime_error {
  public:
@@ -151,7 +151,7 @@ class FallbackTracer {
  private:
   std::vector<std::string> _counters;
   result_t _result;
-  struct timeval _start;
+  std::chrono::time_point<std::chrono::high_resolution_clock> _start;
  public:
   inline void addEvent(std::string eventName) {
     _counters.push_back(eventName);
@@ -161,13 +161,12 @@ class FallbackTracer {
     if (_counters.empty())
       throw TracingError("No events set");
     _result = 0;
-    gettimeofday(&_start, nullptr);
+    _start = std::chrono::high_resolution_clock::now();
   }
 
   inline void stop() {
-    struct timeval end = {0, 0};
-    gettimeofday(&end, nullptr);
-    _result = (end.tv_sec - _start.tv_sec) * 1000000 + (end.tv_usec - _start.tv_usec);
+    auto stop = std::chrono::high_resolution_clock::now();
+    _result = std::chrono::duration_cast<std::chrono::microseconds>(stop - _start).count();
   }
 
   inline long long value(const std::string& eventName) const {

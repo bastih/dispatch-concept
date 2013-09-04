@@ -20,9 +20,14 @@
 
 using value_id_t = std::uint64_t;
 
+namespace std {
+inline std::string to_string(const std::string& s) { return s; }
+}
+
 class ADictionary : public Typed {
  public:
   ~ADictionary();
+  virtual std::string getValueString(value_id_t) const = 0;
 };
 
 template <typename T>
@@ -51,6 +56,10 @@ public:
 
   T getValue(const value_id_t& value_id) const override {
     return _values.at(value_id);
+  }
+
+  std::string getValueString(const value_id_t vid) const override {
+    return std::to_string(getValue(vid));
   }
 private:
   std::vector<T> _values;
@@ -83,6 +92,9 @@ public:
     return _values.at(value_id);
   }
 
+  std::string getValueString(const value_id_t vid) const override {
+    return std::to_string(getValue(vid));
+  }
 private:
   std::vector<T> _values;
   std::unordered_map<T, value_id_t> _index;
@@ -228,7 +240,7 @@ class ATable : public Typed {
   virtual std::size_t width() const = 0;
   virtual std::size_t height() const = 0;
   virtual partitions_t getPartitions(std::size_t column) const = 0;
-
+  virtual partitions_t getHorizontalPartitions(std::size_t row) const = 0;
   /// BAAAAD GURL
   template <typename T>
   T getValue(std::size_t col, std::size_t row) const {
@@ -249,6 +261,8 @@ class Vertical : public ATable {
   std::size_t width() const override;
   std::size_t height() const override { return _parts.front()->height(); }
   partitions_t getPartitions(std::size_t column) const override;
+  partitions_t getHorizontalPartitions(std::size_t row) const override;
+ 
   /// BAD GURRRRRL
   void cacheOffsets() override {
     for (const auto col : Range(width())) {
@@ -275,6 +289,8 @@ class Horizontal : public ATable {
   std::size_t height() const override {
     return std::accumulate(ALL(_parts), 0u, [] (std::size_t r, _AUTO(_parts) part) { return r + part->height(); });
   }
+  partitions_t getPartitions(std::size_t column) const;
+  partitions_t getHorizontalPartitions(std::size_t row) const;
 
   void cacheOffsets() override {
     std::size_t offset = 0;
@@ -285,7 +301,7 @@ class Horizontal : public ATable {
     }
   }
   std::vector<std::size_t> _cached_offsets;
-  partitions_t getPartitions(std::size_t column) const;
+
 
   /// BAD GURRLLL
   value_id_with_dict_t getValueId(std::size_t col, std::size_t row) const override {
@@ -320,6 +336,7 @@ public:
   std::size_t width() const override;
   std::size_t height() const override { return _storage->rows(); }
   partitions_t getPartitions(std::size_t column) const override;
+  partitions_t getHorizontalPartitions(std::size_t row) const override;
   value_id_with_dict_t getValueId(std::size_t col, std::size_t row) const override {
     assert(col == 0);
     // usually we would have to pass col too, but we currently assume single-width tables

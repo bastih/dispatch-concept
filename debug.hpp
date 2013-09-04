@@ -2,10 +2,11 @@
 
 #include <iostream>
 #include <iomanip>
+#include <vector>
 
 template <typename T>
 void print(T arg, std::string delim=" ") {
-  std::cout << " " << arg << delim;
+  std::cout << arg << delim;
 }
 
 inline void print(long long arg, std::string delim) {
