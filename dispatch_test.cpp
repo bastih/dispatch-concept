@@ -8,8 +8,10 @@
 #include "MaterializingScan.h"
 
 #include "storage/structural.h"
-
+#include "dispatch/test.h"
 int main(int argc, char* const argv[]) {
+  run_tests();
+  
   debug("Generating");
   auto somestore = makeStore();
   somestore->cacheOffsets();

@@ -1,5 +1,6 @@
 #pragma once
 
+#include <array>
 #include <stdexcept>
 #include "boost/mpl/at.hpp"
 #include "cartesian.hpp"
@@ -38,13 +39,13 @@ class ImplementationFound {};
 // overloaded exactly for tall params
 // through this specialization, we don't need a fallback execute_special for
 // abstract base classes
-template <class OP, class... DISPATCH_ARGS>
 /* restricting unnamed parameter */
-    // typename std::enable_if<has_special(HasExecuteSpecial<OP, void, TABLE*,
-    // STORAGE*, DICT*>::value, int>::type = 0>
-    auto call_special(OP& op, DISPATCH_ARGS... args)
-        -> typename std::enable_if<
-              has_special((OP*)0, std::forward<DISPATCH_ARGS>(nullptr)...),
+// typename std::enable_if<has_special(HasExecuteSpecial<OP, void, TABLE*,
+// STORAGE*, DICT*>::value, int>::type = 0>
+
+template <class OP, class... DISPATCH_ARGS>
+auto call_special(OP& op, DISPATCH_ARGS... args)
+    -> typename std::enable_if<has_special((OP*)0, std::forward<DISPATCH_ARGS>(nullptr)...),
               void>::type {
   /// extracting table/store/dict actual typeIds through virtual function calls
   /// and compare to what we need for thise combination of types
@@ -56,15 +57,15 @@ template <class OP, class... DISPATCH_ARGS>
   }
 }
 
-template <class OP, class... DISPATCH_ARGS>
 // typename std/::enable_if<!HasExecuteSpecial<OP, void, TABLE*, STORAGE*,
-    // DICT*>::value, int>::type = 0>
-    // Is valid when there is no viable overload in op for the given
-    // params -- don't do anything, there is no match here
-    auto call_special(OP& op, DISPATCH_ARGS... args)
-        -> typename std::enable_if<
-              not has_special((OP*)0, std::forward<DISPATCH_ARGS>(nullptr)...),
-              void>::type {}
+// DICT*>::value, int>::type = 0>
+// Is valid when there is no viable overload in op for the given
+// params -- don't do anything, there is no match here
+template <class OP, class... DISPATCH_ARGS>
+auto call_special(OP& op, DISPATCH_ARGS... args)
+    -> typename std::enable_if<
+      not has_special((OP*)0, std::forward<DISPATCH_ARGS>(nullptr)...),
+      void>::type {}
 
 
 template <int...>
@@ -92,8 +93,7 @@ struct choose_special {
 
   template <typename SEQ, int... S>
   inline void call(seq<S...>) {
-    call_special(op, static_cast<typename boost::mpl::at_c<SEQ, S>::type*>(
-                         std::get<S>(args))...);
+    call_special(op, static_cast<typename boost::mpl::at_c<SEQ, S>::type*>(std::get<S>(args))...);
   }
 };
 

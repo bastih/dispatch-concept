@@ -1,7 +1,6 @@
 #include "ScanOperator.h"
 
 #include "storage/alltypes.h"
-
 #include "dispatch/Operator.h"
 
 template <typename T>
@@ -11,8 +10,7 @@ class ScanOperatorImpl : public Operator<ScanOperatorImpl<T>, all_types> {
   T needle;
   std::size_t offset;
 
-  template <typename TAB, template <class>
-            class Dictionary>
+  template <typename TAB, template <class>  class Dictionary>
   void execute_special(TAB*, FixedStorage* fs, Dictionary<T>* t) {
     value_id_t vid = t->getSubstitute(needle);
     for (std::size_t i = 0, real_pos = offset, e = fs->rows(); i < e; ++i, ++real_pos) {
@@ -22,8 +20,7 @@ class ScanOperatorImpl : public Operator<ScanOperatorImpl<T>, all_types> {
     }
   }
 
-  template <typename TAB, template <class>
-            class Dictionary>
+  template <typename TAB, template <class> class Dictionary>
   void execute_special(TAB*, DefaultValueCompressedStorage* dv, Dictionary<T>* t) {
     value_id_t vid = t->getSubstitute(needle);
     dv->createPositionList(vid, offset, positions);
