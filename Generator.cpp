@@ -1,5 +1,10 @@
-#include <random>
 #include "Generator.h"
+
+#include <random>
+
+#include "storage/stores.h"
+#include "storage/dicts.h"
+#include "storage/structural.h"
 
 std::unique_ptr<FixedStorage> makeFixedStorage(std::size_t sz) {
   auto fs = make_unique<FixedStorage>(sz);

@@ -1,3 +1,3 @@
-#include "dispatch.h"
+#include "Typed.h"
 
 Typed::~Typed() = default;

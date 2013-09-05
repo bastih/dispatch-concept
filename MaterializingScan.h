@@ -1,7 +1,7 @@
 #include <cstdint>
-#include "dispatch_fwd.h"
-
 #include <vector>
+#include <string>
+
 class ATable;
 
 class MaterializingScanOperator {

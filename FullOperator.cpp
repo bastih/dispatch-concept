@@ -1,9 +1,9 @@
 #include "FullOperator.h"
 
-#include "storage.h"
-#include "Operator.h"
+#include "storage/alltypes.h"
+#include "dispatch/Operator.h"
 
-class FullOperatorImpl final : public Operator<FullOperatorImpl> {
+class FullOperatorImpl final : public Operator<FullOperatorImpl, all_types> {
  public:
   // This template means that we implement dispatch for every possible
   // type combination. We use this to simulate the worst case where only

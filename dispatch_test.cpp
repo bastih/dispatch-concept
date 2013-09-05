@@ -1,4 +1,3 @@
-
 #include "helpers/debug.hpp"
 #include "helpers/measure.h"
 #include "Generator.h"
@@ -8,12 +7,9 @@
 #include "FullOperator.h"
 #include "MaterializingScan.h"
 
-#define CATCH_CONFIG_RUNNER
-#include "catch.hpp"
+#include "storage/structural.h"
 
 int main(int argc, char* const argv[]) {
-  int result = Catch::Session().run(argc, argv);
-
   debug("Generating");
   auto somestore = makeStore();
   somestore->cacheOffsets();

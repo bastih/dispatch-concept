@@ -1,9 +1,9 @@
 #include "EmptyOperator.h"
 
-#include "storage.h"
-#include "Operator.h"
+#include "storage/alltypes.h"
+#include "dispatch/Operator.h"
 
-class EmptyOperatorImpl final : public Operator<EmptyOperatorImpl> {
+class EmptyOperatorImpl final : public Operator<EmptyOperatorImpl, all_types> {
  public:
   // NO OVERLOADS
   void execute_fallback(ATable*, AStorage* s, ADictionary* d) {}

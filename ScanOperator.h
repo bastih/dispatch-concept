@@ -1,9 +1,8 @@
 #pragma once
 
 #include <cstdint>
-#include "dispatch_fwd.h"
 
-class ATable;
+#include "storage/types_fwd.h"
 
 class ScanOperator {
  public:

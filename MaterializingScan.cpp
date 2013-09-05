@@ -1,10 +1,13 @@
 #include "MaterializingScan.h"
 
-#include "Operator.h"
-#include "storage.h"
 #include <cstdint>
+#include <string>
 
-class MatScanOperatorImpl : public Operator<MatScanOperatorImpl> {
+#include "storage/alltypes.h"
+#include "dispatch/Operator.h"
+
+
+class MatScanOperatorImpl : public Operator<MatScanOperatorImpl, all_types> {
  public:
   std::vector<std::string> materialized_row;
   std::size_t row;

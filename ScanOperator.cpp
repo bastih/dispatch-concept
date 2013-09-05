@@ -1,10 +1,11 @@
 #include "ScanOperator.h"
 
-#include "Operator.h"
-#include "storage.h"
+#include "storage/alltypes.h"
+
+#include "dispatch/Operator.h"
 
 template <typename T>
-class ScanOperatorImpl : public Operator<ScanOperatorImpl<T>> {
+class ScanOperatorImpl : public Operator<ScanOperatorImpl<T>, all_types> {
  public:
   std::vector<std::size_t> positions;
   T needle;
