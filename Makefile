@@ -4,20 +4,20 @@
 PROJECT = dispatch_test
 # Compiler
 #CC = ~/clang-33/bin/clang++
-CC = g++-4.8 -time -O4
+CC = g++-4.8 -time -O3
 #CC = ~/polly/llvm_build/bin/clang++ -Xclang -load -Xclang ~/polly/llvm_build/lib/LLVMPolly.so -O3 -mllvm -polly -mllvm -polly-vectorizer=polly
 #CC = ~/polly/llvm_build/bin/clang++ -O3
 BUILD_FLAGS = -DNDEBUG -I thirdparty/catch/include -I .
 COMPILE_OPTIONS = -std=c++11 -Wall -Wextra -Wno-unused-parameter -Wno-padded -march=native $(BUILD_FLAGS) #-D USE_PAPI_TRACE
 
-HEADERS = 
+HEADERS =
 LIBS = -lpapi -L/usr/local/lib
 
 # Subdirs to search for additional source files
 SOURCE_FILES := $(shell find . -name "*.cpp" -and -not -path "*/thirdparty/*")
-HEADERS := $(wildcard *.hpp) $(wildcard *.h) Makefile
+HEADERS := Makefile $(shell find . \( -name "*.h" -or -name "*.hpp" \) -and -not -path "*/thirdparty/*")
 # Create an object file of every cpp file
-
+$(warning $(HEADERS))
 OBJECTS = $(patsubst %.cpp, %.o, $(SOURCE_FILES))
 
 # Make $(PROJECT) the default target

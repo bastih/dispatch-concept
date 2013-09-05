@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Typed.h"
+#include "dispatch/Typed.h"
 #include "storage/types_fwd.h"
 
 class AStorage : public Typed {

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Typed.h"
+#include "dispatch/Typed.h"
 #include "storage/ADictionary.h"
 
 class ATable;
