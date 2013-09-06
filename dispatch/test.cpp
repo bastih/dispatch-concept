@@ -28,21 +28,21 @@ class Base : public Typed {
 
 class Child1 : public Base {
  public:
-   void child1_special() {}
+  void child1_special() {}
   COMMON
 };
 
 class Child2 : public Base {
  public:
   void child2_special() {}
-COMMON
+  COMMON
 
 };
 
 class Child3 : public Base {
  public:
   void child3_special() {}
- COMMON
+  COMMON
 };
 
 
@@ -84,43 +84,101 @@ class MultiDispatch : public Operator<MultiDispatch, multi_types> {
 };
 
 
+
 TEST_CASE("single dispatch", "[dispatch]") {
-Base* c1 = new Child1;
-Base* c2 = new Child2;
-Base* c3 = new Child3;
-SingleDispatch si;
-si.execute(c1);
-REQUIRE(c1->do_that_calls() == 1);
-si.execute(c2);
-REQUIRE(c2->do_that_calls() == 1);
-si.execute(c3);
-REQUIRE(c3->do_this_calls() == 1);
+  Base* c1 = new Child1;
+  Base* c2 = new Child2;
+  Base* c3 = new Child3;
+  SingleDispatch si;
+  si.execute(c1);
+  REQUIRE(c1->do_that_calls() == 1);
+  si.execute(c2);
+  REQUIRE(c2->do_that_calls() == 1);
+  si.execute(c3);
+  REQUIRE(c3->do_this_calls() == 1);
 }
-
 TEST_CASE("multi dispatch", "[dispatch]") {
-Base* c1 = new Child1;
-Base* c2 = new Child2;
-Base* c3 = new Child3;
-MultiDispatch mu;
-mu.execute(c1, c1);
-REQUIRE(c1->do_that_calls() == 2);
-mu.execute(c1, c2);
-REQUIRE(c1->do_that_calls() == 3);
-REQUIRE(c2->do_that_calls() == 1);
-mu.execute(c3, c1);
-REQUIRE(c3->do_this_calls() == 1);
-REQUIRE(c1->do_this_calls() == 1);
+  Base* c1 = new Child1;
+  Base* c2 = new Child2;
+  Base* c3 = new Child3;
+  MultiDispatch mu;
+  mu.execute(c1, c1);
+  REQUIRE(c1->do_that_calls() == 2);
+  mu.execute(c1, c2);
+  REQUIRE(c1->do_that_calls() == 3);
+  REQUIRE(c2->do_that_calls() == 1);
+  mu.execute(c3, c1);
+  REQUIRE(c3->do_this_calls() == 1);
+  REQUIRE(c1->do_this_calls() == 1);
+}
+
+using tp = std::tuple<std::tuple<Child1, Child2> >;
+
+class SingleDispatchNew : public OperatorNew<SingleDispatchNew, tp> {
+ public:
+  void execute_special(Child1* c) {
+    c->do_that();
+  }
+
+  void execute_special(Child2* c) {
+    c->do_that();
+  }
+
+  void execute_fallback(Base* c) {
+    c->do_this();
+  }
+};
+
+using multi_types_new = std::tuple<std::tuple<Child1, Child2>, std::tuple<Child1, Child2> >;
+
+class MultiDispatchNew : public OperatorNew<MultiDispatchNew, multi_types_new> {
+ public:
+  void execute_special(Child1* c, Child1* d) {
+    c->do_that(); d->do_that();
+  }
+
+  void execute_special(Child1* c, Child2* d) {
+    c->do_that(); d->do_that();
+  }
+
+  void execute_fallback(Base* c, Base* d) {
+    c->do_this();
+    d->do_this();
+  }
+};
+
+TEST_CASE("new dispatch", "[dispatch]") {
+  Base* c1 = new Child1;
+  Base* c2 = new Child2;
+  Base* c3 = new Child3;
+  SingleDispatchNew si;
+  si.execute(c1);
+  REQUIRE(c1->do_that_calls() == 1);
+  si.execute(c2);
+  REQUIRE(c2->do_that_calls() == 1);
+  si.execute(c3);
+  REQUIRE(c3->do_this_calls() == 1);
 }
 
 
-
-
-
+TEST_CASE("new multi dispatch", "[dispatch]") {
+  Base* c1 = new Child1;
+  Base* c2 = new Child2;
+  Base* c3 = new Child3;
+  MultiDispatchNew mu;
+  mu.execute(c1, c1);
+  REQUIRE(c1->do_that_calls() == 2);
+  mu.execute(c1, c2);
+  REQUIRE(c1->do_that_calls() == 3);
+  REQUIRE(c2->do_that_calls() == 1);
+  mu.execute(c3, c1);
+  REQUIRE(c3->do_this_calls() == 1);
+}
 
 void run_tests() {
-int r = Catch::Session().run();
-if (r != 0) throw std::runtime_error("Failed");
-printf("Test success\n");
+  int r = Catch::Session().run();
+  if (r != 0) throw std::runtime_error("Failed");
+  printf("Test success\n");
 }
 
 

@@ -8,9 +8,6 @@
 
 #include "helpers/shortcuts.h"
 
-namespace std {
-inline std::string to_string(const std::string& s) { return s; }
-}
 
 template <typename T>
 class OrderedDictionary final : public BaseDictionary<T> {

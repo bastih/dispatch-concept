@@ -3,6 +3,10 @@
 #include "dispatch/Typed.h"
 #include "storage/types_fwd.h"
 
+namespace std {
+inline std::string to_string(const std::string& s) { return s; }
+}
+
 class ADictionary : public Typed {
  public:
   ~ADictionary();

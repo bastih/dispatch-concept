@@ -4,11 +4,11 @@
 PROJECT = dispatch_test
 # Compiler
 #CC = ~/clang-33/bin/clang++
-CC = g++-4.8 -time -O4
+#CC = g++-4.8 -O4 -ggdb
 #CC = ~/polly/llvm_build/bin/clang++ -Xclang -load -Xclang ~/polly/llvm_build/lib/LLVMPolly.so -O3 -mllvm -polly -mllvm -polly-vectorizer=polly
-#CC = ~/polly/llvm_build/bin/clang++ -O3
+CC = ~/polly/llvm_build/bin/clang++ -O3
 BUILD_FLAGS = -DNDEBUG -I thirdparty/catch/single_include -I .
-COMPILE_OPTIONS = -std=c++11 -Wall -Wextra -Wno-unused-parameter -Wno-padded -march=native $(BUILD_FLAGS) #-D USE_PAPI_TRACE
+COMPILE_OPTIONS = -std=c++11 -Wall -Wextra -Wno-unused-parameter -Wno-padded -march=native $(BUILD_FLAGS) -D USE_PAPI_TRACE
 
 HEADERS =
 LIBS = -lpapi -L/usr/local/lib
@@ -23,14 +23,10 @@ OBJECTS = $(patsubst %.cpp, %.o, $(SOURCE_FILES))
 all: $(DEPENDENCIES) $(PROJECT)
 
 $(PROJECT): $(OBJECTS)
-	$(CC) -o $(PROJECT) $(OBJECTS) $(BUILD_FLAGS) $(LIBS) -flto
+	$(CC) -o $(PROJECT) $(OBJECTS) $(BUILD_FLAGS) $(LIBS)  -flto
 
 dispatch_test.o: dispatch_test.cpp $(HEADERS)
 	$(CC) -c $(COMPILE_OPTIONS) $(BUILD_FLAGS) -o $@ $<
-
-dispatch/test.o: dispatch/test.cpp $(HEADERS)
-	$(CC) -c $(COMPILE_OPTIONS) $(BUILD_FLAGS) -O0 -o $@ $<
-
 
 %.o: %.cpp $(HEADERS)
 	$(CC) -c $(COMPILE_OPTIONS) -flto -o $@ $<

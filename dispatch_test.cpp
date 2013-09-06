@@ -43,6 +43,21 @@ int main(int argc, char* const argv[]) {
   }
 
   {
+    debug("MaterializingScanOperatorNew");
+    MaterializingScanOperatorNew so(somestore.get(), 3);
+    times_measure("dispatch", [&so]() {
+      so.execute();
+    });
+    times_measure("fallback", [&so]() {
+      so.executeFallback();
+    });
+    times_measure("abstract", [&so]() {
+      so.executeAbstract();
+    });
+  }
+
+  
+  {
     debug("EmptyOperator");
     EmptyOperator so(somestore.get(), 1);
     times_measure("dispatch", [&]() {
