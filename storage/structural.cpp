@@ -36,7 +36,7 @@ partitions_t Vertical::getHorizontalPartitions(std::size_t row) const {
       col_offset += subpart.stop;
       subpart.stop = col_offset;
     }
-    r.insert(std::begin(r), ALL(p));
+    r.insert(std::end(r), ALL(p));
   }
   return r;
 }
@@ -94,7 +94,7 @@ partitions_t Horizontal::getVerticalPartitions(std::size_t column) const {
       height_offset += subpart.stop;
       subpart.stop = height_offset;
     }
-    r.insert(std::begin(r), ALL(p));
+    r.insert(std::end(r), ALL(p));
   }
   return r;
 }

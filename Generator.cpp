@@ -6,6 +6,9 @@
 #include "storage/dicts.h"
 #include "storage/structural.h"
 
+constexpr size_t MAINSIZE = 6 * 1000 * 1000;
+constexpr size_t DELTASIZE = 2 * 1000 * 1000;
+
 std::unique_ptr<FixedStorage> makeFixedStorage(std::size_t sz) {
   auto fs = make_unique<FixedStorage>(sz);
   std::random_device rd;
@@ -45,15 +48,15 @@ std::unique_ptr<UnorderedDictionary<dis_int>> makeUnorderedDict() {
 }
 
 std::unique_ptr<ATable> makeMainTable() {
-  return make_unique<Table>(makeFixedStorage(6 * 1000 * 1000), makeOrderedDict());
+  return make_unique<Table>(makeFixedStorage(MAINSIZE), makeOrderedDict());
 }
 
 std::unique_ptr<ATable> makeCompressedMainTable() {
-  return make_unique<Table>(makeValueCompressedStorage(6 * 1000 * 1000), makeOrderedDict());
+  return make_unique<Table>(makeValueCompressedStorage(MAINSIZE), makeOrderedDict());
 }
 
 std::unique_ptr<ATable> makeDeltaTable() {
-  return make_unique<Table>(make_unique<FixedStorage>(1000 * 1000), makeUnorderedDict());
+  return make_unique<Table>(make_unique<FixedStorage>(DELTASIZE), makeUnorderedDict());
 }
 
 std::unique_ptr<ATable> makeStore() {

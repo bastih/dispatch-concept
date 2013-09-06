@@ -127,22 +127,24 @@ struct cartesian_product_outer_impl;
 // needs to be done
 template <bool done = true>
 struct cartesian_product_inner_impl {
-  template <typename CurrentType, typename LastType, typename CurrentSequence, typename LastSequence,
-            typename ArgumentSequence, typename F>
-  static void execute(CurrentType*, LastType*, CurrentSequence*, LastSequence*, ArgumentSequence*, F) {}
+  template <typename CurrentType, typename LastType, typename CurrentSequence,
+            typename LastSequence, typename ArgumentSequence, typename F>
+  static void execute(CurrentType*, LastType*, CurrentSequence*, LastSequence*,
+                      ArgumentSequence*, F) {}
 };
 
 //  The specialization takes care of the case where the recursion is NOT yetdone
 template <>
 struct cartesian_product_inner_impl<false> {
-  template <typename CurrentType,       //  Iterator to current type in sequence
-            typename LastType,          //  Iterator to last/end type in sequence
-            typename CurrentSequence,   //  Iterator to current outer sequence
-            typename LastSequence,      //  Iterator to last/end outer seuqence
+  template <typename CurrentType,      //  Iterator to current type in sequence
+            typename LastType,         //  Iterator to last/end type in sequence
+            typename CurrentSequence,  //  Iterator to current outer sequence
+            typename LastSequence,     //  Iterator to last/end outer seuqence
             typename ArgumentSequence,  //  Sequence under construction
             typename F                  //  Functor to call
             >
-  static void execute(CurrentType*, LastType*, CurrentSequence*, LastSequence*, ArgumentSequence*, F f) {
+  static void execute(CurrentType*, LastType*, CurrentSequence*, LastSequence*,
+                      ArgumentSequence*, F f) {
     //  Retrieve the type from the sequence
     typedef typename deref<CurrentType>::type item;
 
@@ -153,12 +155,17 @@ struct cartesian_product_inner_impl<false> {
     typedef typename mpl::next<CurrentType>::type NextType;
 
     //  Start working on the next sequence
-    cartesian_product_outer_impl<boost::is_same<CurrentSequence, LastSequence>::value>::execute(
-        (CurrentSequence*)0, (LastSequence*)0, (NewSequence*)0, f);
+    cartesian_product_outer_impl<boost::is_same<
+        CurrentSequence, LastSequence>::value>::execute((CurrentSequence*)0,
+                                                        (LastSequence*)0,
+                                                        (NewSequence*)0, f);
 
     //  Continue with next element of current sequence
-    cartesian_product_inner_impl<boost::is_same<NextType, LastType>::value>::execute(
-        (NextType*)0, (LastType*)0, (CurrentSequence*)0, (LastSequence*)0, (ArgumentSequence*)0, f);
+    cartesian_product_inner_impl<boost::is_same<
+        NextType, LastType>::value>::execute((NextType*)0, (LastType*)0,
+                                             (CurrentSequence*)0,
+                                             (LastSequence*)0,
+                                             (ArgumentSequence*)0, f);
   }
 };
 
@@ -167,7 +174,8 @@ struct cartesian_product_inner_impl<false> {
 // needs to be done
 template <bool done = true>
 struct cartesian_product_outer_impl {
-  template <typename CurrentSequence, typename LastSequence, typename ArgumentSequence, typename F>
+  template <typename CurrentSequence, typename LastSequence,
+            typename ArgumentSequence, typename F>
   static void execute(CurrentSequence*, LastSequence*, ArgumentSequence*, F f) {
     aux::unwrap(f, 0).template operator()<ArgumentSequence>();
   }
@@ -200,8 +208,9 @@ struct cartesian_product_outer_impl<false> {
 
     //  Process inner sequence types
     typedef typename boost::is_same<FirstType, LastType>::type done_type;
-    cartesian_product_inner_impl<done_type::value>::execute((FirstType*)0, (LastType*)0, (NextSequence*)0,
-                                                            (LastSequence*)0, (ArgumentSequence*)0, f);
+    cartesian_product_inner_impl<done_type::value>::execute(
+        (FirstType*)0, (LastType*)0, (NextSequence*)0, (LastSequence*)0,
+        (ArgumentSequence*)0, f);
   }
 };
 
@@ -219,8 +228,10 @@ inline void cartesian_product(F f, SequenceOfSequences* = 0) {
 
   //  Use recursion to iterate over all outer sequence elements
   //  The recursion stops as soon first == last
-  aux::cartesian_product_outer_impl<boost::is_same<FirstSequence, LastSequence>::value>::execute(
-      (FirstSequence*)0, (LastSequence*)0, (vector0<>*)0, f);
+  aux::cartesian_product_outer_impl<boost::is_same<
+      FirstSequence, LastSequence>::value>::execute((FirstSequence*)0,
+                                                    (LastSequence*)0,
+                                                    (vector0<>*)0, f);
 }
 
 }  //  namespace mpl

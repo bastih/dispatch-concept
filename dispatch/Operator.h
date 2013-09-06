@@ -45,8 +45,9 @@ class ImplementationFound {};
 
 template <class OP, class... DISPATCH_ARGS>
 auto call_special(OP& op, DISPATCH_ARGS... args)
-    -> typename std::enable_if<has_special((OP*)0, std::forward<DISPATCH_ARGS>(nullptr)...),
-                               void>::type {
+    -> typename std::enable_if<
+          has_special((OP*)0, std::forward<DISPATCH_ARGS>(nullptr)...),
+          void>::type {
   /// extracting table/store/dict actual typeIds through virtual function calls
   /// and compare to what we need for thise combination of types
   // op.checks++;
@@ -64,39 +65,8 @@ auto call_special(OP& op, DISPATCH_ARGS... args)
 template <class OP, class... DISPATCH_ARGS>
 auto call_special(OP& op, DISPATCH_ARGS... args)
     -> typename std::enable_if<
-      not has_special((OP*)0, std::forward<DISPATCH_ARGS>(nullptr)...),
-      void>::type {}
-
-
-template <class OP, class... DISPATCH_ARGS>
-auto call_uspecial(OP* op, DISPATCH_ARGS... args)
-    -> typename std::enable_if<has_special((OP*)0, std::forward<DISPATCH_ARGS>(nullptr)...),
-                               void>::type {
-  op->execute_special(args...);
-}
-
-
-
-template <class T>
-void debug_types(T a) {
-  std::cout << typeid(T).name() << std::endl;
-}
-
-
-template <class T, class... Ts>
-void debug_types(T a, Ts... args) {
-  std::cout << typeid(T).name() << std::endl;
-}
-
-// typename std/::enable_if<!HasExecuteSpecial<OP, void, TABLE*, STORAGE*,
-// DICT*>::value, int>::type = 0>
-// Is valid when there is no viable overload in op for the given
-// params -- don't do anything, there is no match here
-template <class OP, class... DISPATCH_ARGS>
-auto call_uspecial(OP* op, DISPATCH_ARGS... args)
-    -> typename std::enable_if<
-      not has_special((OP*)0, std::forward<DISPATCH_ARGS>(nullptr)...),
-      void>::type { std::cout << "this sucks" << std::endl; debug_types(args...); }
+          not has_special((OP*)0, std::forward<DISPATCH_ARGS>(nullptr)...),
+          void>::type {}
 
 
 template <int...>
@@ -124,10 +94,10 @@ struct choose_special {
 
   template <typename SEQ, int... S>
   inline void call(seq<S...>) {
-    call_special(op, static_cast<typename boost::mpl::at_c<SEQ, S>::type*>(std::get<S>(args))...);
+    call_special(op, static_cast<typename boost::mpl::at_c<SEQ, S>::type*>(
+                         std::get<S>(args))...);
   }
 };
-
 
 typedef boost::mpl::vector<> empty_;
 typedef boost::mpl::vector<empty_, empty_, empty_> empty_types;
@@ -141,7 +111,8 @@ class Operator {
 
   template <typename... ARGS>
   void execute(ARGS... args) {
-    choose_special<OperatorType, boost::mpl::size<TYPES>::value> ci (*static_cast<OperatorType*>(this), {args...});
+    choose_special<OperatorType, boost::mpl::size<TYPES>::value> ci(
+        *static_cast<OperatorType*>(this), {args...});
 
     try {
       // generates the cartesian product of all types and per
@@ -156,115 +127,164 @@ class Operator {
   }
 };
 
-
 #include <tuple>
 #include "tuple_foreach.h"
 
-template<int...> struct index_tuple{};
+template <int...>
+struct index_tuple {};
 
-template<int I, typename IndexTuple, typename... Types>
+template <int I, typename IndexTuple, typename... Types>
 struct make_indexes_impl;
 
-template<int I, int... Indexes, typename T, typename ... Types>
-struct make_indexes_impl<I, index_tuple<Indexes...>, T, Types...>
-{
-  typedef typename make_indexes_impl<I + 1, index_tuple<Indexes..., I>, Types...>::type type;
+template <int I, int... Indexes, typename T, typename... Types>
+struct make_indexes_impl<I, index_tuple<Indexes...>, T, Types...> {
+  typedef typename make_indexes_impl<I + 1, index_tuple<Indexes..., I>,
+                                     Types...>::type type;
 };
 
-template<int I, int... Indexes>
-struct make_indexes_impl<I, index_tuple<Indexes...> >
-{
+template <int I, int... Indexes>
+struct make_indexes_impl<I, index_tuple<Indexes...>> {
   typedef index_tuple<Indexes...> type;
 };
 
-template<typename ... Types>
-struct make_indexes : make_indexes_impl<0, index_tuple<>, Types...>
-{};
+template <typename... Types>
+struct make_indexes : make_indexes_impl<0, index_tuple<>, Types...> {};
 
-template<class Ret, class... Args, int... Indexes >
-Ret apply_helper( Ret (*pf)(Args...), index_tuple< Indexes... >, std::tuple<Args...>&& tup)
-{
-  return pf( std::forward<Args>( std::get<Indexes>(tup))... );
+
+template <class Ret, class... Args, int... Indexes>
+Ret apply_helper(Ret (*pf)(Args...), index_tuple<Indexes...>,
+                 std::tuple<Args...>&& tup) {
+  return pf(std::forward<Args>(std::get<Indexes>(tup))...);
 }
 
-template<class Ret, class ... Args>
-Ret apply(Ret (*pf)(Args...), const std::tuple<Args...>&  tup)
-{
-  return apply_helper(pf, typename make_indexes<Args...>::type(), std::tuple<Args...>(tup));
+template <class Ret, class... Args>
+Ret apply(Ret (*pf)(Args...), const std::tuple<Args...>& tup) {
+  return apply_helper(pf, typename make_indexes<Args...>::type(),
+                      std::tuple<Args...>(tup));
 }
 
-template<class Ret, class ... Args>
-Ret apply(Ret (*pf)(Args...), std::tuple<Args...>&&  tup)
-{
-  return apply_helper(pf, typename make_indexes<Args...>::type(), std::forward<std::tuple<Args...>>(tup));
+template <class Ret, class... Args>
+Ret apply(Ret (*pf)(Args...), std::tuple<Args...>&& tup) {
+  return apply_helper(pf, typename make_indexes<Args...>::type(),
+                      std::forward<std::tuple<Args...>>(tup));
 }
+
+template< std::size_t... Ns >
+struct indices
+{
+  typedef indices< Ns..., sizeof...( Ns ) > next;
+};
+
+template< std::size_t N >
+struct make_indices
+{
+  typedef typename make_indices< N - 1 >::type::next type;
+};
+
+template<>
+struct make_indices< 0 >
+{
+  typedef indices<> type;
+};
+
+
+template< typename Tuple, std::size_t N, typename T,
+          typename Indices = typename make_indices< std::tuple_size< Tuple >::value >::type >
+struct element_replace;
+
+template< typename... Ts, std::size_t N, typename T, std::size_t... Ns >
+struct element_replace< std::tuple< Ts... >, N, T, indices< Ns... > >
+{
+  typedef std::tuple< typename std::conditional< Ns == N, T, Ts >::type... > type;
+};
+
+struct NotFound : public std::runtime_error { NotFound(std::string what): std::runtime_error(what) {} };
+
+template <class T>
+void debug_types(T a) {
+  std::cout << typeid(T).name() << std::endl;
+}
+
+template <class T, class... Ts>
+void debug_types(T a, Ts... args) {
+ std::cout << typeid(T).name() << std::endl;
+}
+
+template <class OP, class... DISPATCH_ARGS>
+auto call_uspecial(OP* op, DISPATCH_ARGS... args)
+    -> typename std::enable_if<
+          has_special((OP*)0, std::forward<DISPATCH_ARGS>(nullptr)...),
+          void>::type {
+  op->execute_special(args...);
+}
+
+template <class OP, class... DISPATCH_ARGS>
+auto call_uspecial(OP* op, DISPATCH_ARGS... args)
+    -> typename std::enable_if<
+          not has_special((OP*)0, std::forward<DISPATCH_ARGS>(nullptr)...),
+      void>::type {
+  op->execute_fallback(args...);
+}
+
+
 
 template <typename OperatorType, typename TYPES>
 class OperatorNew {
  public:
   virtual ~OperatorNew() = default;
 
-  template <typename PROCESSED, typename REMAINING, int LEVEL, int ARGCOUNT>
+  template <typename PARAMS, int ARGCOUNT, int LEVEL>
   struct branch_it {
     const std::array<std::size_t, ARGCOUNT>& dispatch_vals;
     OperatorType* op;
-    PROCESSED processed;
-    REMAINING remaining;
+    PARAMS* params;
 
-    branch_it(const std::array<std::size_t, ARGCOUNT>& d, OperatorType* o, PROCESSED p, REMAINING r) : dispatch_vals(d), op(o), processed(p), remaining(r) {}
+    branch_it(const std::array<std::size_t, ARGCOUNT>& d, OperatorType* o,
+              PARAMS* p)
+        : dispatch_vals(d), op(o), params(p) {}
 
     template <typename T>
     void operator()(const T& x) {
       if (typeId<T>() == std::get<LEVEL>(dispatch_vals)) {
-        auto tuple = std::tuple_cat(processed, std::make_tuple(static_cast<T*>(std::get<0>(remaining))));
-        auto tail = tuple_tail(remaining);
-        tswitch<decltype(tuple), decltype(tail), ARGCOUNT, LEVEL+1>().call(dispatch_vals, op, tuple, tail);
+        using new_params = typename element_replace<PARAMS, LEVEL, T*>::type;
+        tswitch<new_params, ARGCOUNT, LEVEL + 1, LEVEL+1 == std::tuple_size<TYPES>::value>().call(dispatch_vals, op, reinterpret_cast<new_params*>(params));
       }
     }
   };
 
-  template <class PROCESSED_PARAMS,
-            class REMAINING_ARGS,
-            int ARGCOUNT = (std::tuple_size<PROCESSED_PARAMS>::value + std::tuple_size<REMAINING_ARGS>::value),
+  template <class PARAMS,
+            int ARGCOUNT = (std::tuple_size<PARAMS>::value),
             int LEVEL = 0,
-            bool STOP = (std::tuple_size<REMAINING_ARGS>::value == 0)>
+            bool STOP = (LEVEL == std::tuple_size<TYPES>::value)>
   struct tswitch;
 
-  template <class PROCESSED,
-            class REMAINING,
-            int ARGCOUNT,
-            int LEVEL,
-            bool STOP>
+  template <class PARAMS, int ARGCOUNT, int LEVEL, bool STOP>
   struct tswitch {
-    void call(const std::array<size_t, ARGCOUNT>& d, OperatorType* op, PROCESSED pargs, REMAINING args) {
-      branch_it<PROCESSED, REMAINING, LEVEL, ARGCOUNT> bit(d, op, pargs, args);
+    void call(const std::array<size_t, ARGCOUNT>& d, OperatorType* op, PARAMS* params) {
+      branch_it<PARAMS, ARGCOUNT, LEVEL> bit(d, op, params);
       using tuple_t = typename std::tuple_element<LEVEL, TYPES>::type;
-      for_each(*(tuple_t*) nullptr, bit);
+      for_each(*(tuple_t*)nullptr, bit);
     }
   };
 
-  template <class PROCESSED_PARAMS,
-            class REMAINING_ARGS,
-            int ARGCOUNT,
-            int LEVEL>
-  struct tswitch<PROCESSED_PARAMS, REMAINING_ARGS, ARGCOUNT, LEVEL, true> {
-    void call(const std::array<size_t, ARGCOUNT>&, OperatorType* op, PROCESSED_PARAMS pargs, REMAINING_ARGS args) {
-      auto tuple = std::tuple_cat(std::make_tuple(op), pargs, args);
+  template <class PARAMS, int ARGCOUNT, int LEVEL>
+  struct tswitch<PARAMS, ARGCOUNT, LEVEL, true> {
+    void call(const std::array<size_t, ARGCOUNT>&, OperatorType* op, PARAMS* params) {
+      auto tuple = std::tuple_cat(std::make_tuple(op), *params);
       apply<void>(call_uspecial, tuple);
-      throw ImplementationFound();
+      op->exec = true;
     }
   };
-
-
+  bool exec = false;
   template <typename... ARGS>
   void execute(ARGS... args) {
     auto me = static_cast<OperatorType*>(this);
-    std::array<std::size_t, sizeof...(ARGS)> dispatch_values {args->getTypeId()...};
-    try {
-      tswitch<std::tuple<>, std::tuple<ARGS...> >().call(dispatch_values, me, std::tuple<>(), std::forward_as_tuple(args...));
-    } catch (const ImplementationFound&) {
-      return;
+    std::tuple<ARGS...> tuple(args...);
+    std::array<std::size_t, sizeof...(ARGS)> dispatch_values{args->getTypeId()...};
+    exec = false;
+    tswitch<std::tuple<ARGS...>>().call(dispatch_values, me, &tuple);
+    if (!exec)  {
+      me->execute_fallback(args...);
     }
-    static_cast<OperatorType*>(this)->execute_fallback(args...);
   }
 };
