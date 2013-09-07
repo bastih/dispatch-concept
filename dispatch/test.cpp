@@ -10,16 +10,19 @@
 #define CATCH_CONFIG_RUNNER
 #include "catch.hpp"
 
-#define COMMON                                                \
- public:                                                      \
-  virtual void do_that() { _calls++; }                        \
-  virtual void do_this() { _calls_this++; }                   \
-  virtual std::size_t do_that_calls() { return _calls; }      \
-  virtual std::size_t do_this_calls() { return _calls_this; } \
- private:                                                     \
-  std::size_t _calls = 0;                                     \
-  std::size_t _calls_this = 0;                                \
- public:
+#define COMMON                                                  \
+  public:                                                       \
+  virtual void do_that() { _calls++; }                          \
+  virtual void do_this() { _calls_this++; }                     \
+  virtual std::size_t do_that_calls() { return _calls; }        \
+  virtual std::size_t do_this_calls() { return _calls_this; }   \
+  virtual void store_value(int a) { _value = a; }               \
+  virtual int stored_value() { return _value; }                 \
+private:                                                        \
+std::size_t _calls = 0;                                         \
+std::size_t _calls_this = 0;                                    \
+int _value = 0;                                                 \
+public:
 
 class Base : public Typed {
   COMMON
@@ -116,6 +119,20 @@ class SingleDispatchNew : public OperatorNew<SingleDispatchNew, tp> {
 using multi_types_new =
     std::tuple<std::tuple<Child1, Child2>, std::tuple<Child1, Child2> >;
 
+
+TEST_CASE("new dispatch", "[dispatch]") {
+  Base* c1 = new Child1;
+  Base* c2 = new Child2;
+  Base* c3 = new Child3;
+  SingleDispatchNew si;
+  si.execute(c1);
+  REQUIRE(c1->do_that_calls() == 1);
+  si.execute(c2);
+  REQUIRE(c2->do_that_calls() == 1);
+  si.execute(c3);
+  REQUIRE(c3->do_this_calls() == 1);
+}
+
 class MultiDispatchNew : public OperatorNew<MultiDispatchNew, multi_types_new> {
  public:
   void execute_special(Child1* c, Child1* d) {
@@ -135,18 +152,6 @@ class MultiDispatchNew : public OperatorNew<MultiDispatchNew, multi_types_new> {
   }
 };
 
-TEST_CASE("new dispatch", "[dispatch]") {
-  Base* c1 = new Child1;
-  Base* c2 = new Child2;
-  Base* c3 = new Child3;
-  SingleDispatchNew si;
-  si.execute(c1);
-  REQUIRE(c1->do_that_calls() == 1);
-  si.execute(c2);
-  REQUIRE(c2->do_that_calls() == 1);
-  si.execute(c3);
-  REQUIRE(c3->do_this_calls() == 1);
-}
 
 TEST_CASE("new multi dispatch", "[dispatch]") {
   Base* c1 = new Child1;
@@ -160,6 +165,31 @@ TEST_CASE("new multi dispatch", "[dispatch]") {
   REQUIRE(c2->do_that_calls() == 1);
   mu.execute(c3, c1);
   REQUIRE(c3->do_this_calls() == 1);
+}
+
+TEST_CASE("multi dispatch on non-existant specialization", "[dispatch]") {
+  Base* c2 =  new Child2;
+  MultiDispatchNew mu;
+  mu.execute(c2, c2);
+  REQUIRE(c2->do_this_calls() == 2);
+}
+
+
+class SingleDispatchExtraParams : public OperatorNew<SingleDispatchExtraParams, tp> {
+ public:
+  void execute_special(Child1* c, int i) { c->do_that(); c->store_value(i); }
+  void execute_special(Child2* c, int i) { c->do_that(); }
+  void execute_fallback(Base* c, int i) { c->do_this(); }
+};
+
+TEST_CASE("new dispatch with extra params", "[dispatch]") {
+  Base* c1 = new Child1;
+  Base* c2 = new Child2;
+  Base* c3 = new Child3;
+  SingleDispatchExtraParams si;
+  si.execute(c1, 10);
+  REQUIRE(c1->do_that_calls() == 1);
+  REQUIRE(c1->stored_value() == 10);
 }
 
 void run_tests() {
