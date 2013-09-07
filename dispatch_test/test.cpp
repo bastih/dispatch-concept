@@ -7,7 +7,7 @@
 
 #include "boost/mpl/vector.hpp"
 
-#define CATCH_CONFIG_RUNNER
+#define CATCH_CONFIG_MAIN
 #include "catch.hpp"
 
 #define COMMON                                                  \
@@ -90,6 +90,7 @@ TEST_CASE("single dispatch", "[dispatch]") {
   si.execute(c3);
   REQUIRE(c3->do_this_calls() == 1);
 }
+
 TEST_CASE("multi dispatch", "[dispatch]") {
   Base* c1 = new Child1;
   Base* c2 = new Child2;
@@ -190,10 +191,4 @@ TEST_CASE("new dispatch with extra params", "[dispatch]") {
   si.execute(c1, 10);
   REQUIRE(c1->do_that_calls() == 1);
   REQUIRE(c1->stored_value() == 10);
-}
-
-void run_tests() {
-  int r = Catch::Session().run();
-  //if (r != 0) throw std::runtime_error("Failed");
-  printf("Test success\n");
 }

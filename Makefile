@@ -8,7 +8,7 @@ CC = g++-4.8 -O4 -ggdb
 #CC = ~/polly/llvm_build/bin/clang++ -Xclang -load -Xclang ~/polly/llvm_build/lib/LLVMPolly.so -O3 -mllvm -polly -mllvm -polly-vectorizer=polly
 #CC = ~/polly/llvm_build/bin/clang++ -O3 -g3
 BUILD_FLAGS = -I thirdparty/catch/single_include -I .
-COMPILE_OPTIONS = -std=c++11 -Wall -Wextra -Wno-unused-parameter -Wno-padded -march=native $(BUILD_FLAGS) #-D USE_PAPI_TRACE
+COMPILE_OPTIONS = -std=c++11 -Wall -Wextra -Wno-unused-parameter -Wno-padded -march=native $(BUILD_FLAGS) -D USE_PAPI_TRACE
 
 HEADERS =
 LIBS = -lpapi -L/usr/local/lib
