@@ -48,7 +48,7 @@ end
 
 function flto.getldflags(cfg)
    local flags = gcc.getldflags(cfg)
-   table.insert(flags, "-flto")
+   table.insert(flags, "-flto=2")
    return flags
 
 end

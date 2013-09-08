@@ -2,7 +2,6 @@
 
 #include <array>
 #include <stdexcept>
-#include "boost/mpl/at.hpp"
 #include "dispatch/Typed.h"
 #include "dispatch/loop.hpp"
 #include "helpers/debug.hpp"
