@@ -5,6 +5,7 @@
 #include "boost/mpl/at.hpp"
 #include "cartesian.hpp"
 #include "dispatch/Typed.h"
+#include "dispatch/loop.hpp"
 #include "helpers/debug.hpp"
 
 // Called by SFINAE if reserve does not exist or is not accessible
@@ -230,24 +231,8 @@ class OperatorNew {
     }
   };
 
-  template <int I, int E, bool STOP = (I==E)>
-  struct loop;
-
-  template <int I, int E>
-  struct loop<I, E, true> {
-    template <typename F>
-    void operator()(F) {}
-  };
-
-  template <int I, int E, bool STOP>
-  struct loop {
-    template<typename F>
-    void operator()(F f) {
-      f.template operator()<I>();
-      loop<I+1, E>()(f);
-    }
-  };
   
+
   bool exec;
   template <typename... ARGS>
   void execute(ARGS... args) {

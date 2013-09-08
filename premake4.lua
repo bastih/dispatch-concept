@@ -1,14 +1,17 @@
 include "toolset.lua"
 
 solution "Dispatch"
-  configurations { "ReleaseFLTO", "Release", "ReleaseWithPapi" }
-  language "c++"  
+  configurations { "Debug", "ReleaseFLTO", "Release", "ReleaseWithPapi" }
+  language "c++"
   p = path.getdirectory("")
   p1 = path.getdirectory("thirdparty/catch/single_include/")
   includedirs { p, p1 }
-  buildoptions { "-std=c++11", "-Wall", "-Wextra", "-Wno-unused-parameter", "-O3" }
-  linkoptions { "-O3", "-fwhole-program", "-march=native"}
+  buildoptions { "-std=c++11", "-Wall", "-Wextra", "-Wno-unused-parameter", "-ggdb" }
+  linkoptions { "-ggdb" }
   location "."
+
+  configuration "Debug"
+    flags { "Symbols" }
 
   configuration "ReleaseWithPapi"
     defines {"USE_PAPI_TRACE"}
@@ -16,7 +19,11 @@ solution "Dispatch"
 
   configuration "ReleaseFLTO"
     toolset "flto"
-    
+
+  configuration "*Release*"
+    linkoptions { "-O3", "-fwhole-program", "-march=native"}
+    buildoptions { "-O3" }
+
   project "dispatch-lib"
     kind "StaticLib"
     files { "dispatch/*.cpp"}
