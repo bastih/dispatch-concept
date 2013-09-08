@@ -130,6 +130,8 @@ class Operator {
 
 #include "dispatch/tuple_foreach.h"
 
+#define UNUSED __attribute__((UNUSED))
+
 struct NotFound : public std::runtime_error { NotFound(std::string what): std::runtime_error(what) {} };
 
 template<typename T, typename... ARGS>
@@ -162,9 +164,9 @@ inline auto call_uspecial( O* op, ARGS... args)
 }
 
 template <class O, typename... ARGS>
-auto call_uspecial(O* o, ARGS... args) -> typename std::enable_if<!has_execute_overload((O*) 0, ARGS()...)
-                                                                  and
-                                                                  !has_fallback_overload((O*) 0, ARGS()...), bool>::type {
+auto call_uspecial(O* , ARGS... ) -> typename std::enable_if<!has_execute_overload((O*) 0, ARGS()...)
+                                                             and
+                                                             !has_fallback_overload((O*) 0, ARGS()...), bool>::type {
   std::runtime_error("All bets are off: Could not find a matching fallback for (" + type_names<ARGS...>() + ")");
   return false;
 }

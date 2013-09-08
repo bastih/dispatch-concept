@@ -1,5 +1,3 @@
-#include "dispatch/test.h"
-
 #include <cassert>
 
 #include "dispatch/Typed.h"
