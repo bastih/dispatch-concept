@@ -16,17 +16,3 @@ class MaterializingScanOperator {
   ATable* _table;
   std::size_t _row;
 };
-
-class MaterializingScanOperatorNew {
- public:
-  MaterializingScanOperatorNew(ATable* t, std::size_t row);
-  void execute();
-  void executeFallback();
-  void executeAbstract();
-  void executePerfect();
-  std::vector<std::string> result;
-
- private:
-  ATable* _table;
-  std::size_t _row;
-};

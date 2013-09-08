@@ -18,13 +18,7 @@ int main(int argc, char* const argv[]) {
   std::random_device rd;
   std::uniform_int_distribution<int> dist(0, UPPER_VID);
   dis_int value = dist(rd);
-  // DICT TESTS
-  /*debug(somestore->getValueId(2, 1000*1000-1).vid);
-    debug(somestore->getValueId(2, 1000*1000-1).dict);
-    debug(somestore->getValueId(2, 1000*1000).vid);
-    debug(somestore->getValueId(2, 1000*1000).dict);
-    debug(somestore->getValue<dis_int>(2, 1000*1000-1));
-    debug(somestore->getValue<dis_int>(2, 1000*1000));*/
+
   {
     debug("MaterializingScanOperator");
     MaterializingScanOperator so(somestore.get(), 3);
@@ -38,24 +32,6 @@ int main(int argc, char* const argv[]) {
         so.executeAbstract();
       });
   }
-
-  {
-    debug("MaterializingScanOperatorNew");
-    MaterializingScanOperatorNew so(somestore.get(), 3);
-    times_measure("dispatch", [&so]() {
-        so.execute();
-      });
-    times_measure("fallback", [&so]() {
-        so.executeFallback();
-      });
-    times_measure("abstract", [&so]() {
-        so.executeAbstract();
-      });
-    times_measure("perfect ", [&so]() {
-        so.executePerfect();
-      });
-  }
-
 
   {
     debug("EmptyOperator");
@@ -78,18 +54,6 @@ int main(int argc, char* const argv[]) {
         so.executeFallback();
       });
   }
-
-  {
-    debug("FullOperatorNew");
-    FullOperatorNew so(somestore.get(), 1);
-    times_measure("dispatch", [&]() {
-        so.execute();
-      });
-    times_measure("fallback", [&]() {
-        so.executeFallback();
-      });
-  }
-
     
   {
     debug("ScanOperator on FixedLengthStorage");

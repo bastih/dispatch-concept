@@ -4,7 +4,7 @@
 #include "dispatch/Operator.h"
 
 template <typename T>
-class ScanOperatorImpl : public Operator<ScanOperatorImpl<T>, all_types> {
+class ScanOperatorImpl : public OperatorNew<ScanOperatorImpl<T>, all_types_new> {
  public:
   std::vector<std::size_t> positions;
   T needle;
