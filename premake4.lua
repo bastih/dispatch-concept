@@ -10,9 +10,12 @@ solution "Dispatch"
   linkoptions { "-ggdb" }
   location "."
 
-  configuration "ReleaseWithPapi"
+  local proc = os.outputof("papi_avail | grep Yes")
+  if string.len(proc) > 0 then
     defines {"USE_PAPI_TRACE"}
     links {"papi"}
+    printf("%s", "Detected available PAPI counters")
+  end
 
   configuration "ReleaseFLTO"
     toolset "flto"
@@ -46,6 +49,6 @@ solution "Dispatch"
   project "storage-perf2"
     kind "ConsoleApp"
     files {"performance_test/*.cpp"}
-    links {  "access-lib", "storage-lib", "dispatch-lib",  "papi"}
+    links {"access-lib", "storage-lib", "dispatch-lib"}
     location "build"
     targetdir "."
