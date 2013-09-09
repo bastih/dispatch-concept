@@ -13,9 +13,9 @@ class ScanOperatorImpl : public OperatorNew<ScanOperatorImpl<T>, all_types_new> 
   template <typename TAB, template <class>  class Dictionary>
   void execute_special(TAB*, FixedStorage* fs, Dictionary<T>* t) {
     value_id_t vid = t->getSubstitute(needle);
-    for (std::size_t i = 0, real_pos = offset, e = fs->rows(); i < e; ++i, ++real_pos) {
+    for (std::size_t i = 0, e = fs->rows(); i < e; ++i) {
       if (fs->get(i) == vid) {
-        positions.push_back(real_pos);
+        positions.push_back(i + offset);
       }
     }
   }

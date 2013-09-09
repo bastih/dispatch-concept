@@ -10,9 +10,6 @@ solution "Dispatch"
   linkoptions { "-ggdb" }
   location "."
 
-  configuration "Debug"
-    flags { "Symbols" }
-
   configuration "ReleaseWithPapi"
     defines {"USE_PAPI_TRACE"}
     links {"papi"}

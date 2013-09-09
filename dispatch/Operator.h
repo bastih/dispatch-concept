@@ -2,30 +2,28 @@
 
 #include <array>
 #include <stdexcept>
+#include "boost/mpl/at.hpp"
 #include "dispatch/Typed.h"
 #include "dispatch/loop.hpp"
 #include "helpers/debug.hpp"
 #include "dispatch/tuple_foreach.h"
 
-#define UNUSED __attribute__((UNUSED))
-
-struct NotFound : public std::runtime_error { NotFound(std::string what): std::runtime_error(what) {} };
+#define UNUSED __attribute__((unused))
 
 template<typename T, typename... ARGS>
-constexpr auto has_execute_overload(__attribute__((unused)) T* o,
-                                    __attribute__((unused)) ARGS... args) -> decltype(o->execute_special(args...), bool()) { return true; }
+constexpr auto has_execute_overload(UNUSED T* o,
+                                    UNUSED ARGS... args) -> decltype(o->execute_special(args...), bool()) { return true; }
 constexpr auto has_execute_overload(...) -> bool { return false; }
 
 template <typename T, typename... ARGS>
-constexpr auto has_fallback_overload(__attribute__((unused)) T* o,
-                                     __attribute__((unused)) ARGS... args) -> decltype(o->fallback(args...), bool()) { return true; }
+constexpr auto has_fallback_overload(UNUSED T* o,
+                                     UNUSED ARGS... args) -> decltype(o->fallback(args...), bool()) { return true; }
 constexpr auto has_fallback_overload(...) -> bool { return false; }
 
 
 template <class O, class... ARGS>
 auto call_uspecial(O* op, ARGS... args)
     -> typename std::enable_if<has_execute_overload((O*) 0, ARGS()...), bool>::type {
-  //std::cout << "Special..." << type_names<ARGS...>() << std::endl;
   op->execute_special(args...);
   return true;
 }
@@ -35,7 +33,6 @@ inline auto call_uspecial( O* op, ARGS... args)
     -> typename std::enable_if<!has_execute_overload((O*) 0, ARGS()...)
                                and
                                has_fallback_overload((O*) 0, ARGS()...), bool>::type {
-  //std::cout << "Fallback..." << type_names<ARGS...>() << std::endl;
   op->execute_fallback(args...);
   return true;
 }
