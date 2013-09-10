@@ -65,13 +65,10 @@ class OperatorNew {
     void operator()(const T& x) {
       if (typeId<T>() == std::get<LEVEL>(dispatch_vals)) {
         using new_params = typename element_replace<PARAMS, LEVEL, T*>::type;
-        tswitch<new_params, LEVEL + 1>().call(dispatch_vals, op, reinterpret_cast<new_params*>(params));
+        tswitch<new_params, LEVEL + 1, (LEVEL+1 == ARGCOUNT)>().call(dispatch_vals, op, reinterpret_cast<new_params*>(params));
       }
     }
   };
-
-  template <class PARAMS, int LEVEL = 0, bool STOP = (LEVEL == ARGCOUNT)>
-  struct tswitch;
 
   template <class PARAMS, int LEVEL, bool STOP>
   struct tswitch {
@@ -114,7 +111,7 @@ class OperatorNew {
     loop<0, ARGCOUNT>()(pop);
  
     exec = false;
-    tswitch<std::tuple<ARGS...>>().call(dispatch_values, me, &tuple);
+    tswitch<std::tuple<ARGS...>, 0, 0==ARGCOUNT>().call(dispatch_values, me, &tuple);
     if (!exec) {
       me->execute_fallback(args...);
     }

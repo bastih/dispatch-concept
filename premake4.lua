@@ -1,7 +1,8 @@
 include "toolset.lua"
+include "clang.lua"
 
 solution "Dispatch"
-  configurations { "ReleaseFLTO", "Release" }
+  configurations { "ReleaseFLTO", "Release", "ReleaseClang" }
   language "c++"
   p = path.getdirectory("")
   p1 = path.getdirectory("thirdparty/catch/single_include/")
@@ -20,6 +21,9 @@ solution "Dispatch"
 
   configuration "ReleaseFLTO"
     toolset "flto"
+
+  configuration "ReleaseClang"
+    toolset "clang34"
 
   configuration "*Release*"
     linkoptions { "-O3", "-fwhole-program", "-march=native"}

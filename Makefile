@@ -22,6 +22,13 @@ ifeq ($(config),release)
   access_lib_config = release
   storage_perf2_config = release
 endif
+ifeq ($(config),releaseclang)
+  dispatch_lib_config = releaseclang
+  dispatch_test_config = releaseclang
+  storage_lib_config = releaseclang
+  access_lib_config = releaseclang
+  storage_perf2_config = releaseclang
+endif
 
 PROJECTS := dispatch-lib dispatch-test storage-lib access-lib storage-perf2
 
@@ -72,6 +79,7 @@ help:
 	@echo "CONFIGURATIONS:"
 	@echo "  releaseflto"
 	@echo "  release"
+	@echo "  releaseclang"
 	@echo ""
 	@echo "TARGETS:"
 	@echo "   all (default)"

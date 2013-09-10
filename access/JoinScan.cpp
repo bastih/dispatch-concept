@@ -4,11 +4,13 @@
 #include "storage/alltypes.h"
 
 
-using jtables = std::tuple<Table>;
+using jtables = std::tuple<Table, RawTable>;
 
 using jstorages = std::tuple<FixedStorage, BitStorage<2>, DefaultValueCompressedStorage>;
 
-using jdicts = std::tuple<OrderedDictionary<dis_int>, UnorderedDictionary<dis_int> >;
+using jdicts = std::tuple<OrderedDictionary<dis_int>, UnorderedDictionary<dis_int>,   OrderedDictionary<dis_float>, OrderedDictionary<dis_string>,
+  UnorderedDictionary<dis_float>, UnorderedDictionary<dis_string>
+ >;
 
 using join_types = std::tuple<jtables, jstorages, jdicts, jtables, jstorages, jdicts>;
 

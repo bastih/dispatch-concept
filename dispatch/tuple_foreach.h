@@ -85,41 +85,21 @@ struct element_replace< std::tuple< Ts... >, N, T, indices< Ns... > >
   typedef std::tuple< typename std::conditional< Ns == N, T, Ts >::type... > type;
 };
 
-template< typename Tuple, std::size_t N, 
-          typename Indices = typename make_indices< std::tuple_size< Tuple >::value >::type >
-struct split;
 
-template< typename... Ts, std::size_t N, std::size_t ... Ns >
-struct split < std::tuple < Ts... >, N, indices < Ns... > > {
-using head = decltype(std::tuple_cat(typename std::conditional< Ns < N, std::tuple<Ts>, std::tuple<> >::type()...));
-using tail = decltype(std::tuple_cat(typename std::conditional< Ns < N, std::tuple<>, std::tuple<Ts> >::type()...));
-};
 
-template <int I, class Tuple, typename F, int UNTIL, bool STOP = I==UNTIL>
-struct for_each_impl;
-
-template <int I, class Tuple, typename F, int UNTIL, bool STOP>
-struct for_each_impl {
+template<int I, class Tuple, typename F> struct for_each_impl {
   static void for_each(const Tuple& t, F f) {
-    for_each_impl<I - 1, Tuple, F, UNTIL>::for_each(t, f);
+    for_each_impl<I - 1, Tuple, F>::for_each(t, f);
     f(std::get<I>(t));
   }
 };
-
-template <int I, class Tuple, typename F, int UNTIL>
-struct for_each_impl<I, Tuple, F, UNTIL, true> {
-  static void for_each(const Tuple& t, F f) { f(std::get<I>(t)); }
+template<class Tuple, typename F> struct for_each_impl<0, Tuple, F> {
+  static void for_each(const Tuple& t, F f) {
+    f(std::get<0>(t));
+  }
 };
-
-template <class Tuple, typename F>
+template<class Tuple, typename F>
 F for_each(const Tuple& t, F f) {
-  for_each_impl<std::tuple_size<Tuple>::value - 1, Tuple, F, 0>::for_each(t, f);
+  for_each_impl<std::tuple_size<Tuple>::value - 1, Tuple, F>::for_each(t, f);
   return f;
-}
-
-
-template <int COUNT, class Tuple, typename F>
-F for_each_c(const Tuple& t, F f) {
-for_each_impl<COUNT-1, Tuple, F, 0>::for_each(t, f);
-return f;
 }
