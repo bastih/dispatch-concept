@@ -2,6 +2,7 @@
 
 #include <cstdint>
 #include <string>
+#include "helpers/strong_typedef.hpp"
 
 using dis_int = std::int32_t;
 using dis_float = float;
@@ -22,3 +23,6 @@ template <int> class BitStorage;
 
 template <typename T> class OrderedDictionary;
 template <typename T> class UnorderedDictionary;
+
+using col_t = strong_typedef<std::size_t>;
+using row_t = strong_typedef<std::size_t>;

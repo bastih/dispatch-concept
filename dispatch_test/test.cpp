@@ -24,19 +24,19 @@ class Base : public Typed {
   COMMON
 };
 
-class Child1 : public Base {
+class Child1 final : public Base {
  public:
   void child1_special() {}
   COMMON
 };
 
-class Child2 : public Base {
+class Child2 final : public Base {
  public:
   void child2_special() {}
   COMMON
 };
 
-class Child3 : public Base {
+class Child3 final : public Base {
  public:
   void child3_special() {}
   COMMON
@@ -54,7 +54,8 @@ class SingleDispatchNew : public OperatorNew<SingleDispatchNew, tp> {
 };
 
 using multi_types_new =
-    std::tuple<std::tuple<Child1, Child2>, std::tuple<Child1, Child2> >;
+    std::tuple<std::tuple<Child1, Child2>,
+               std::tuple<Child1, Child2, Child3> >;
 
 
 TEST_CASE("new dispatch", "[dispatch]") {
@@ -121,10 +122,41 @@ class SingleDispatchExtraParams : public OperatorNew<SingleDispatchExtraParams, 
 
 TEST_CASE("new dispatch with extra params", "[dispatch]") {
   Base* c1 = new Child1;
-  Base* c2 = new Child2;
-  Base* c3 = new Child3;
   SingleDispatchExtraParams si;
   si.execute(c1, 10);
   REQUIRE(c1->do_that_calls() == 1);
   REQUIRE(c1->stored_value() == 10);
+}
+
+
+class TemplateDispatch : public OperatorNew<TemplateDispatch, multi_types_new> {
+ public:
+  template <typename C1T, typename C2T>
+  void execute_special(C1T c1, C2T c2) {
+    c1->do_that();
+    c2->do_this();
+  }
+
+  void execute_special(Child1* c1, Child1* c2) {
+    c1->do_that();
+    c2->do_that();
+  }
+
+  void execute_fallback(Base* a, Base* b) { execute_special(a, b); }
+};
+
+TEST_CASE("template dispatch", "[dispatch]") {
+  TemplateDispatch si;
+  {
+    Base* c1 = new Child1;
+    Base* c2 = new Child2;
+    si.execute(c1, c2);
+    REQUIRE(c1->do_that_calls() == 1);
+    REQUIRE(c2->do_this_calls() == 1);
+  }
+  {
+    Base* c1 = new Child1;
+    si.execute(c1, c1);
+    REQUIRE(c1->do_that_calls() == 2);
+  }
 }

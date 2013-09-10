@@ -23,7 +23,7 @@ constexpr auto has_fallback_overload(...) -> bool { return false; }
 
 template <class O, class... ARGS>
 auto call_uspecial(O* op, ARGS... args)
-    -> typename std::enable_if<has_execute_overload((O*) 0, ARGS()...), bool>::type {
+    -> typename std::enable_if<has_execute_overload((O*) 0, ARGS()...), bool>::type {  
   op->execute_special(args...);
   return true;
 }

@@ -72,6 +72,6 @@ function flto.gettoolname(cfg, tool)
    elseif tool == "cc" then
       return "gcc-4.8"
    else
-      return "g++-4.8"
+      return "g++-4.8 -time"
    end
 end

@@ -1,7 +1,7 @@
 include "toolset.lua"
 
 solution "Dispatch"
-  configurations { "Debug", "ReleaseFLTO", "Release", "ReleaseWithPapi" }
+  configurations { "ReleaseFLTO", "Release" }
   language "c++"
   p = path.getdirectory("")
   p1 = path.getdirectory("thirdparty/catch/single_include/")
