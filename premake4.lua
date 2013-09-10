@@ -13,6 +13,7 @@ solution "Dispatch"
   local proc = os.outputof("papi_avail | grep Yes")
   if string.len(proc) > 0 then
     defines {"USE_PAPI_TRACE"}
+    libdirs {"/usr/local/lib"}
     links {"papi"}
     printf("%s", "Detected available PAPI counters")
   end

@@ -6,13 +6,16 @@
 #include "access/EmptyOperator.h"
 #include "access/FullOperator.h"
 #include "access/MaterializingScan.h"
+#include "access/JoinScan.h"
 
 #include "storage/structural.h"
 
 int main(int argc, char* const argv[]) {
   debug("Generating");
   auto somestore = makeStore();
+  auto smallstore = makeSmallStore();
   somestore->cacheOffsets();
+  smallstore->cacheOffsets();
   debug("Done.");
 
   std::random_device rd;
@@ -54,7 +57,21 @@ int main(int argc, char* const argv[]) {
         so.executeFallback();
       });
   }
-    
+
+  {
+    debug("JoinScan");
+    JoinScan so(somestore.get(), smallstore.get(), col_t(4), col_t(4));
+    times_measure("dispatch", [&]() {
+        so.execute();
+      });
+    times_measure("fallback", [&]() {
+        so.executeFallback();
+      });
+    times_measure("abstract", [&]() {
+        so.executeAbstract();
+      });
+  }
+
   {
     debug("ScanOperator on FixedLengthStorage");
     ScanOperator so(somestore.get(), 1, value);
@@ -101,6 +118,8 @@ int main(int argc, char* const argv[]) {
       });
   }
 
+
+  
   /*std::cout << store->get(0) << std::endl;
     std::cout << store->get(2) << std::endl;
     std::cout << store->get(1) << std::endl;

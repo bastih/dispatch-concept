@@ -3,13 +3,14 @@
 #include "dispatch/Operator.h"
 #include "storage/alltypes.h"
 
-using join_types = std::tuple<table_types_new,
-                              storage_types_new,
-                              dictionary_types_new,
-                              table_types_new,
-                              storage_types_new,
-                              dictionary_types_new>;
 
+using jtables = std::tuple<Table>;
+
+using jstorages = std::tuple<FixedStorage, BitStorage<2>, DefaultValueCompressedStorage>;
+
+using jdicts = std::tuple<OrderedDictionary<dis_int>, UnorderedDictionary<dis_int> >;
+
+using join_types = std::tuple<jtables, jstorages, jdicts, jtables, jstorages, jdicts>;
 
 template <typename ColumnType>
 struct JoinScanImpl : public OperatorNew<JoinScanImpl<ColumnType>, join_types> {
@@ -53,6 +54,27 @@ void JoinScan::execute() {
                    const_cast<ADictionary*>(inner_part.dict),
                    outer_part.offset,
                    inner_part.offset);
+    }
+  }
+}
+
+
+void JoinScan::executeFallback() {
+  JoinScanImpl<dis_int> impl;
+
+  auto outer_parts = _outer->getVerticalPartitions(_outer_col);
+  auto inner_parts = _inner->getVerticalPartitions(_inner_col);
+
+  for (auto outer_part: outer_parts) {
+    for (auto inner_part: inner_parts) {
+      impl.execute_fallback(const_cast<ATable*>(outer_part.table),
+                            const_cast<AStorage*>(outer_part.storage),
+                            const_cast<ADictionary*>(outer_part.dict),
+                            const_cast<ATable*>(inner_part.table),
+                            const_cast<AStorage*>(inner_part.storage),
+                            const_cast<ADictionary*>(inner_part.dict),
+                            outer_part.offset,
+                            inner_part.offset);
     }
   }
 }
