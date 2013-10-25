@@ -15,10 +15,6 @@ class MatScanOperatorImpl : public OperatorNew<MatScanOperatorImpl, all_types_ne
 
   template <typename TAB, typename STORE, typename DICT>
   void execute_special(TAB* t, STORE* s, DICT* d) {
-    materialized_row.push_back(std::to_string(d->getValue(s->get(row))));
-  }
-
-  void execute_fallback(ATable* t, AStorage* s, ADictionary* d) {
     materialized_row.push_back(d->getValueString(s->get(row)));
   }
 };
@@ -43,7 +39,7 @@ void MaterializingScanOperator::executeFallback() {
   for (const auto& part : _table->getHorizontalPartitions(_row)) {
     o.row = part.offset;
     o.col = part.start;
-    o.execute_fallback(const_cast<ATable*>(part.table), const_cast<AStorage*>(part.storage),
+    o.execute_special(const_cast<ATable*>(part.table), const_cast<AStorage*>(part.storage),
                        const_cast<ADictionary*>(part.dict));
   }
   result = o.materialized_row;

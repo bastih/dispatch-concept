@@ -6,6 +6,10 @@
 #define CATCH_CONFIG_MAIN
 #include "catch.hpp"
 
+#undef CHECK
+#undef REQUIRE
+#define CHECK(ARG) assert(ARG)
+#define REQUIRE(ARG) assert(ARG)
 #define COMMON                                                  \
   public:                                                       \
   virtual void do_that() { _calls++; }                          \
@@ -42,6 +46,13 @@ class Child3 final : public Base {
   COMMON
 };
 
+class Child4 final : public Base {
+public:
+  void child4_special() {}
+  COMMON
+};
+
+
 using tp = std::tuple<std::tuple<Child1, Child2> >;
 
 class SingleDispatchNew : public OperatorNew<SingleDispatchNew, tp> {
@@ -50,13 +61,12 @@ class SingleDispatchNew : public OperatorNew<SingleDispatchNew, tp> {
 
   void execute_special(Child2* c) { c->do_that(); }
 
-  void execute_fallback(Base* c) { c->do_this(); }
+  void execute_special(Base* c) { c->do_this(); }
 };
 
 using multi_types_new =
     std::tuple<std::tuple<Child1, Child2>,
                std::tuple<Child1, Child2, Child3> >;
-
 
 TEST_CASE("new dispatch", "[dispatch]") {
   Base* c1 = new Child1;
@@ -83,8 +93,7 @@ class MultiDispatchNew : public OperatorNew<MultiDispatchNew, multi_types_new> {
     d->do_that();
   }
 
-  void execute_fallback(Base* c, Base* d) {
-    std::cout << "FALLBACK" << std::endl;
+  void execute_special(Base* c, Base* d) {
     c->do_this();
     d->do_this();
   }
@@ -117,7 +126,7 @@ class SingleDispatchExtraParams : public OperatorNew<SingleDispatchExtraParams, 
  public:
   void execute_special(Child1* c, int i) { c->do_that(); c->store_value(i); }
   void execute_special(Child2* c, int i) { c->do_that(); }
-  void execute_fallback(Base* c, int i) { c->do_this(); }
+  void execute_special(Base* c, int i) { c->do_this(); }
 };
 
 TEST_CASE("new dispatch with extra params", "[dispatch]") {
@@ -127,7 +136,6 @@ TEST_CASE("new dispatch with extra params", "[dispatch]") {
   REQUIRE(c1->do_that_calls() == 1);
   REQUIRE(c1->stored_value() == 10);
 }
-
 
 class TemplateDispatch : public OperatorNew<TemplateDispatch, multi_types_new> {
  public:
@@ -142,7 +150,7 @@ class TemplateDispatch : public OperatorNew<TemplateDispatch, multi_types_new> {
     c2->do_that();
   }
 
-  void execute_fallback(Base* a, Base* b) { execute_special(a, b); }
+  void execute_special(Base* a, Base* b) { execute_special(a, b); }
 };
 
 TEST_CASE("template dispatch", "[dispatch]") {
@@ -158,5 +166,35 @@ TEST_CASE("template dispatch", "[dispatch]") {
     Base* c1 = new Child1;
     si.execute(c1, c1);
     REQUIRE(c1->do_that_calls() == 2);
+  }
+}
+
+class UnifiedDispatch : public OperatorNew<UnifiedDispatch, multi_types_new> {
+ public:
+  template <typename C1T, typename C2T>
+  void execute_special(C1T* c1, C2T* c2) {
+    c1->do_that();
+    c2->do_this();
+    debug("special");
+  }
+  void execute_special(Base* a, Base* b) {}
+};
+
+TEST_CASE("unified dispatch", "[dispatch]") {
+  debug("meee");
+  UnifiedDispatch si;
+  {
+    Base* c1 = new Child1;
+    si.execute(c1, c1);
+    CHECK(c1->do_that_calls() == 1);
+    CHECK(c1->do_this_calls() == 1);
+  }
+  debug("wee");
+  {
+    Base* c1 = new Child1;
+    Base* c4 = new Child4;
+    si.execute(c1, c4);
+    CHECK(c1->do_that_calls() == 0);
+    CHECK(c1->do_this_calls() == 0);
   }
 }

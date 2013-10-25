@@ -1,4 +1,4 @@
-#include "ScanOperator.h"
+#include "access/ScanOperator.h"
 
 #include "storage/alltypes.h"
 #include "dispatch/Operator.h"
@@ -26,7 +26,7 @@ class ScanOperatorImpl : public OperatorNew<ScanOperatorImpl<T>, all_types_new> 
     dv->createPositionList(vid, offset, positions);
   }
 
-  void execute_fallback(ATable*, AStorage* s, ADictionary* d) {
+  void execute_special(ATable*, AStorage* s, ADictionary* d) {
     auto bd = static_cast<BaseDictionary<T>*>(d);
     value_id_t vid = bd->getSubstitute(needle);
     for (std::size_t i = 0, real_pos = offset, e = s->rows(); i < e; ++i, ++real_pos) {
@@ -37,7 +37,8 @@ class ScanOperatorImpl : public OperatorNew<ScanOperatorImpl<T>, all_types_new> 
   }
 };
 
-ScanOperator::ScanOperator(ATable* t, std::size_t column, dis_int value) : _table(t), _column(column), _value(value) {}
+ScanOperator::ScanOperator(ATable* t, std::size_t column, dis_int value)
+    : _table(t), _column(column), _value(value) {}
 
 void ScanOperator::execute() {
   ScanOperatorImpl<dis_int> o;
@@ -55,7 +56,7 @@ void ScanOperator::executeFallback() {
   o.needle = _value;
   for (const auto& part : _table->getVerticalPartitions(_column)) {
     o.offset = part.start;
-    o.execute_fallback(const_cast<ATable*>(part.table), const_cast<AStorage*>(part.storage),
+    o.execute_special(const_cast<ATable*>(part.table), const_cast<AStorage*>(part.storage),
                        const_cast<ADictionary*>(part.dict));
   }
 }

@@ -59,20 +59,6 @@ int main(int argc, char* const argv[]) {
   }
 
   {
-    debug("JoinScan");
-    JoinScan so(somestore.get(), smallstore.get(), col_t(4), col_t(4));
-    times_measure("dispatch", [&]() {
-        so.execute();
-      });
-    times_measure("fallback", [&]() {
-        so.executeFallback();
-      });
-    times_measure("abstract", [&]() {
-        so.executeAbstract();
-      });
-  }
-
-  {
     debug("ScanOperator on FixedLengthStorage");
     ScanOperator so(somestore.get(), 1, value);
     times_measure("dispatch", [&]() {
@@ -118,6 +104,20 @@ int main(int argc, char* const argv[]) {
       });
   }
 
+
+  {
+    debug("JoinScan");
+    JoinScan so(somestore.get(), smallstore.get(), col_t(4), col_t(4));
+    times_measure("dispatch", [&]() {
+        so.execute();
+      });
+    times_measure("fallback", [&]() {
+        so.executeFallback();
+      });
+    times_measure("abstract", [&]() {
+        so.executeAbstract();
+      });
+  }
 
   
   /*std::cout << store->get(0) << std::endl;

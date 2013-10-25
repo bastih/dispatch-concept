@@ -12,6 +12,7 @@ class FullOperatorImpl final : public OperatorNew<FullOperatorImpl, all_types_ne
   template <typename TAB, typename F, typename Dictionary>
   void execute_special(TAB* tab, F* fs, Dictionary* t) {}
 
+  void execute_special(ATable*, AStorage* s, ADictionary* d) {}
   void execute_fallback(ATable*, AStorage* s, ADictionary* d) {}
 };
 

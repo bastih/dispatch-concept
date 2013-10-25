@@ -6,6 +6,7 @@
 class EmptyOperatorImpl final : public OperatorNew<EmptyOperatorImpl, all_types_new> {
  public:
   // NO OVERLOADS
+  void execute_special(ATable*, AStorage* s, ADictionary* d) {}
   void execute_fallback(ATable*, AStorage* s, ADictionary* d) {}
 };
 

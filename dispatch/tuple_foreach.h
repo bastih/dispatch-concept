@@ -41,7 +41,6 @@ template <typename... Types>
 struct make_indexes : make_indexes_impl<0, index_tuple<>, Types...> {};
 
 
-
 template <class Ret, class... Args, int... Indexes>
 Ret apply_helper(Ret (*pf)(Args...), index_tuple<Indexes...>, std::tuple<Args...>&& tup) {
   return pf(std::forward<Args>(std::get<Indexes>(tup))...);
@@ -87,17 +86,18 @@ struct element_replace< std::tuple< Ts... >, N, T, indices< Ns... > >
 
 
 
-template<int I, class Tuple, typename F> struct for_each_impl {
+template<int I, class Tuple, typename F>
+struct for_each_impl {
   static void for_each(const Tuple& t, F f) {
     for_each_impl<I - 1, Tuple, F>::for_each(t, f);
-    f(std::get<I>(t));
+    f.template operator()<typename std::tuple_element<I, Tuple>::type>();
   }
 };
-template<class Tuple, typename F> struct for_each_impl<0, Tuple, F> {
-  static void for_each(const Tuple& t, F f) {
-    f(std::get<0>(t));
-  }
+
+template<class Tuple, typename F> struct for_each_impl<-1, Tuple, F> {
+  static void for_each(const Tuple&, F) {}
 };
+
 template<class Tuple, typename F>
 F for_each(const Tuple& t, F f) {
   for_each_impl<std::tuple_size<Tuple>::value - 1, Tuple, F>::for_each(t, f);
