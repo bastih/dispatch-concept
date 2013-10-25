@@ -1,0 +1,3 @@
+module := $(realpath $(dir $(lastword $(MAKEFILE_LIST))))
+
+-include ../rules.mk
