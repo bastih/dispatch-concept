@@ -2,20 +2,20 @@
 
 #include <array>
 #include <stdexcept>
-#include "boost/mpl/at.hpp"
+
 #include "dispatch/Typed.h"
 #include "dispatch/loop.hpp"
 #include "helpers/debug.hpp"
 #include "dispatch/tuple_foreach.h"
-//#include "dispatch/apply.h"
+
 #define UNUSED __attribute__((unused))
 
-template<typename T, typename... ARGS>
+/*template<typename T, typename... ARGS>
 constexpr auto has_execute_overload(UNUSED T* o,
                                     UNUSED ARGS... args) -> decltype(o->execute_special(args...), bool()) { return true; }
 constexpr auto has_execute_overload(...) -> bool { return false; }
 
-/*template <typename T, typename... ARGS>
+template <typename T, typename... ARGS>
 constexpr auto has_fallback_overload(UNUSED T* o,
                                      UNUSED ARGS... args) -> decltype(o->fallback(args...), bool()) { return true; }
                                      constexpr auto has_fallback_overload(...) -> bool { return false; }*/
@@ -26,11 +26,11 @@ auto call_uspecial(O* op, ARGS... args) -> typename std::enable_if<has_execute_o
   op->exec = true;
   }*/
 
-template <class O, class... ARGS>
+/*template <class O, class... ARGS>
 auto call_uspecial(O* op, ARGS... args) -> typename std::enable_if<!has_execute_overload((O*) 0, ARGS()...), void>::type {
   //op->execute_fallback(args...);
   //return false;
-}
+  }*/
 
 /*template <class O, typename... ARGS>
 auto call_uspecial(O* , ARGS... ) -> typename std::enable_if<!has_execute_overload((O*) 0, ARGS()...)
@@ -84,7 +84,6 @@ class OperatorNew {
       auto tup = std::tuple_cat(std::make_tuple(op), *params);
       apply<void>(call_special, tup);
       op->exec = true;
-      //explode(op->execute_special, *params);
     }
   };
 
@@ -157,7 +156,6 @@ class Dispatch {
       auto tup = std::tuple_cat(std::make_tuple(op), *params);
       apply<void>(call_special, tup);
       op->exec = true;
-      //explode(op->execute_special, *params);
     }
   };
 

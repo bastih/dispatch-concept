@@ -91,6 +91,7 @@ $(1).defined := is defined
 $(1).libs ?=
 # rules
 $(1).use_OBJS := $$($(1).objs)
+$(1).use_INCLUDE_DIRS := $$($(1).includes)
 $$(eval $$(call inherit_all,$(1)))
 
 $$($(1).binary) : $$($(1).objs) $$($(1).use_deps)

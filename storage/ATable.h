@@ -27,7 +27,7 @@ typedef std::vector<partition_t> partitions_t;
 
 class ATable : public Typed {
  public:
-  ~ATable();
+  virtual ~ATable();
   virtual std::size_t width() const NOTIMPLEMENTED;
   virtual std::size_t height() const NOTIMPLEMENTED;
   virtual partitions_t getVerticalPartitions(std::size_t column) const NOTIMPLEMENTED;

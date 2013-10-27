@@ -6,10 +6,10 @@
 #define CATCH_CONFIG_MAIN
 #include "catch.hpp"
 
-#undef CHECK
+/*#undef CHECK
 #undef REQUIRE
 #define CHECK(ARG) assert(ARG)
-#define REQUIRE(ARG) assert(ARG)
+#define REQUIRE(ARG) assert(ARG)*/
 #define COMMON                                                  \
   public:                                                       \
   virtual void do_that() { _calls++; }                          \
@@ -175,13 +175,11 @@ class UnifiedDispatch : public OperatorNew<UnifiedDispatch, multi_types_new> {
   void execute_special(C1T* c1, C2T* c2) {
     c1->do_that();
     c2->do_this();
-    debug("special");
   }
   void execute_special(Base* a, Base* b) {}
 };
 
 TEST_CASE("unified dispatch", "[dispatch]") {
-  debug("meee");
   UnifiedDispatch si;
   {
     Base* c1 = new Child1;
@@ -189,7 +187,6 @@ TEST_CASE("unified dispatch", "[dispatch]") {
     CHECK(c1->do_that_calls() == 1);
     CHECK(c1->do_this_calls() == 1);
   }
-  debug("wee");
   {
     Base* c1 = new Child1;
     Base* c4 = new Child4;

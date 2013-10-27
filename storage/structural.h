@@ -17,7 +17,6 @@ class Vertical : public ATable {
   partitions_t getVerticalPartitions(std::size_t column) const override;
   partitions_t getHorizontalPartitions(std::size_t row) const override;
 
-  /// BAD GURRRRRL
   void cacheOffsets() override;
   value_id_with_dict_t getValueId(std::size_t col, std::size_t row) const;
  private:
@@ -57,6 +56,7 @@ class Table final : public ATable {
   std::unique_ptr<AStorage> _storage;
   std::unique_ptr<ADictionary> _dictionary;
 };
+
 
 class RawTable final : public ATable {
  public:
