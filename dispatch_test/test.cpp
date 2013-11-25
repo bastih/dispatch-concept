@@ -153,21 +153,41 @@ class TemplateDispatch : public OperatorNew<TemplateDispatch, multi_types_new> {
   void execute_special(Base* a, Base* b) { execute_special(a, b); }
 };
 
-TEST_CASE("template dispatch", "[dispatch]") {
-  TemplateDispatch si;
-  {
-    Base* c1 = new Child1;
-    Base* c2 = new Child2;
-    si.execute(c1, c2);
-    REQUIRE(c1->do_that_calls() == 1);
-    REQUIRE(c2->do_this_calls() == 1);
+class TemplateDispatch2 {
+ public:
+  using return_type = int;
+
+  template <typename C1T, typename C2T>
+  int execute_special(C1T c1, C2T c2) {
+    c1->do_that();
+    c2->do_this();
+    std::cout << "Templ" << std::endl;
+    return 1;
   }
-  {
-    Base* c1 = new Child1;
-    si.execute(c1, c1);
-    REQUIRE(c1->do_that_calls() == 2);
+
+  int execute_special(Child1* c1, Child1* c2) {
+    c1->do_that();
+    c2->do_that();
+    std::cout << "T2 " << std::endl;
+    return 2;
   }
-}
+
+  int execute_special(Base* a, Base* b) { return execute_special<Base*, Base*>(a, b); }
+};
+
+
+/*TEST_CASE("template dispatch new disp", "[dispatch]") {
+  Base* c1 = new Child1;
+  Base* c2 = new Child2;
+  Base* c3 = new Child3;
+  TemplateDispatch2 td2;
+  dispatch<multi_types_new>(td2, c1, c2);
+  CHECK(c1->do_that_calls() == 1);
+  CHECK(c2->do_this_calls() == 1);
+  dispatch<multi_types_new>(td2, c1, c1);
+  dispatch<multi_types_new>(td2, c3, c3);
+  }*/
+
 
 class UnifiedDispatch : public OperatorNew<UnifiedDispatch, multi_types_new> {
  public:
