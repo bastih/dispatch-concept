@@ -21,20 +21,20 @@ void times_measure(std::string name, F&& f, std::size_t i = 40) {
   for (std::size_t r = 0; r < i; ++r) {
     PapiTracer pt;
     pt.addEvent("PAPI_TOT_CYC");
-    // pt.addEvent("PAPI_TOT_INS");
-    // pt.addEvent("PAPI_L1_DCM");
+    pt.addEvent("PAPI_TOT_INS");
+    pt.addEvent("PAPI_L1_DCM");
     pt.start();
     f();
     pt.stop();
     values["CYC"].push_back(pt.value("PAPI_TOT_CYC"));
-    // values["INS"].push_back(pt.value("PAPI_TOT_INS"));
-    // values["L1M"].push_back(pt.value("PAPI_L1_DCM"));
+    values["INS"].push_back(pt.value("PAPI_TOT_INS"));
+    values["L1M"].push_back(pt.value("PAPI_L1_DCM"));
   }
   for (auto& kv : values) {
     auto& times = kv.second;
     std::sort(times.begin(), times.end());
     std::uint64_t sum = std::accumulate(times.begin(), times.end(), 0ull);
-    debug(name, kv.first, "avg", static_cast<std::uint64_t>(sum / i), "min",
+    debug_delim(", ", name, kv.first, "avg", static_cast<std::uint64_t>(sum / i), "min",
           times.front(), "max", times.back(), "warmup",
           pt1.value("PAPI_TOT_CYC"));
   }

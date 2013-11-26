@@ -36,3 +36,16 @@ void debug(T arg, ARGS... args) {
   print(arg, " ");
   debug(args...);
 }
+
+template <typename T>
+void debug_delim(std::string delim, T arg) {
+  print(arg, "");
+  std::cout << "\n";
+}
+
+
+template <typename T, typename... ARGS>
+void debug_delim(std::string delim, T arg, ARGS... args) {
+  print(arg, delim);
+  debug_delim(delim, args...);
+}

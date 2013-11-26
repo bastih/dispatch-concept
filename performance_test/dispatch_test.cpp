@@ -110,13 +110,13 @@ int main(int argc, char* const argv[]) {
     JoinScan so(somestore.get(), smallstore.get(), col_t(4), col_t(4));
     times_measure("dispatch", [&]() {
         so.execute();
-      });
+      }, 10);
     times_measure("fallback", [&]() {
         so.executeFallback();
-      });
+      }, 10);
     times_measure("abstract", [&]() {
         so.executeAbstract();
-      });
+      }, 10);
   }
 
   
