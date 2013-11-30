@@ -28,8 +28,6 @@ std::unique_ptr<FixedStorage> makeSequentialFixedStorage(std::size_t sz) {
   return fs;
 }
 
-
-
 std::unique_ptr<DefaultValueCompressedStorage> makeValueCompressedStorage(std::size_t sz) {
   auto fs = make_unique<DefaultValueCompressedStorage>(sz, DEFAULT_VID);
   std::random_device rd;

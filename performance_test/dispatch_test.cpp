@@ -11,124 +11,91 @@
 #include "storage/structural.h"
 
 int main(int argc, char* const argv[]) {
-  debug("Generating");
+  //debug("Generating");
   auto somestore = makeStore();
   auto smallstore = makeSmallStore();
   somestore->cacheOffsets();
   smallstore->cacheOffsets();
-  debug("Done.");
+  //debug("Done.");
 
   std::random_device rd;
   std::uniform_int_distribution<int> dist(0, UPPER_VID);
   dis_int value = dist(rd);
 
   {
-    debug("MaterializingScanOperator");
+    std::string mo {"MaterializingScanOperator"};
     MaterializingScanOperator so(somestore.get(), 3);
-    times_measure("dispatch", [&so]() {
+    times_measure({mo, "dispatch"}, [&so]() {
         so.execute();
       });
-    times_measure("fallback", [&so]() {
+    times_measure({mo, "fallback"}, [&so]() {
         so.executeFallback();
       });
-    times_measure("abstract", [&so]() {
+    times_measure({mo, "abstract"}, [&so]() {
         so.executeAbstract();
       });
   }
 
   {
-    debug("EmptyOperator");
-    EmptyOperator so(somestore.get(), 1);
-    times_measure("dispatch", [&]() {
-        so.execute();
-      });
-    times_measure("fallback", [&]() {
-        so.executeFallback();
-      });
-  }
-
-  {
-    debug("FullOperator");
-    FullOperator so(somestore.get(), 1);
-    times_measure("dispatch", [&]() {
-        so.execute();
-      });
-    times_measure("fallback", [&]() {
-        so.executeFallback();
-      });
-  }
-
-  {
-    debug("ScanOperator on FixedLengthStorage");
+    std::string mo { "Scan FixedLengthStorage" };
     ScanOperator so(somestore.get(), 1, value);
-    times_measure("dispatch", [&]() {
+    times_measure({mo, "dispatch"}, [&]() {
         so.execute();
       });
-    times_measure("fallback", [&]() {
+    times_measure({mo, "fallback"}, [&]() {
         so.executeFallback();
       });
-    times_measure("abstract", [&]() {
+    times_measure({mo, "abstract"}, [&]() {
         so.executeAbstract();
       });
-    times_measure("perfect ", [&]() {
+    times_measure({mo, "perfect"}, [&]() {
         so.executePerfect();
       });
   }
 
   auto default_value = ((BaseDictionary<dis_int>*)somestore->getValueId(3, 0).dict)->getValue(DEFAULT_VID);
   {
-    debug("ScanOperator on default storage (default value)", default_value);
+    std::string mo { "Scan DefaultValueCompressed"};
     ScanOperator so(somestore.get(), 3, default_value);
-    times_measure("dispatch", [&]() {
+    times_measure({mo, "dispatch"}, [&]() {
         so.execute();
       });
-    times_measure("fallback", [&]() {
+    times_measure({mo, "fallback"}, [&]() {
         so.executeFallback();
       });
-    times_measure("abstract", [&]() {
+    times_measure({mo, "abstract"}, [&]() {
         so.executeAbstract();
       });
   }
   auto other_value = ((BaseDictionary<dis_int>*)somestore->getValueId(3, 0).dict)->getValue(DEFAULT_VID) + 1;
   {
-    debug("ScanOperator on default storage (other value)", other_value);
+    std::string mo { "Scan DefaultValueCompressed (non-compressed)"};
     ScanOperator so(somestore.get(), 3, other_value);
-    times_measure("dispatch", [&]() {
+    times_measure({mo, "dispatch"}, [&]() {
         so.execute();
       });
-    times_measure("fallback", [&]() {
+    times_measure({mo, "fallback"}, [&]() {
         so.executeFallback();
       });
-    times_measure("abstract", [&]() {
+    times_measure({mo, "abstract"}, [&]() {
         so.executeAbstract();
       });
   }
 
 
   {
-    debug("JoinScan");
+    std::string mo { "Join"};
     JoinScan so(somestore.get(), smallstore.get(), col_t(4), col_t(4));
-    times_measure("dispatch", [&]() {
+    times_measure({mo, "dispatch"}, [&]() {
         so.execute();
-      }, 10);
-    times_measure("fallback", [&]() {
+      });
+    times_measure({mo, "fallback"}, [&]() {
         so.executeFallback();
-      }, 10);
-    times_measure("abstract", [&]() {
+      });
+    times_measure({mo, "abstract"}, [&]() {
         so.executeAbstract();
-      }, 10);
+      });
+
   }
-
-  
-  /*std::cout << store->get(0) << std::endl;
-    std::cout << store->get(2) << std::endl;
-    std::cout << store->get(1) << std::endl;
-    OperatorImpl o;
-
-
-
-    o.execute(tab, store, dict); // Executes
-    o.execute(tab,store, odict);
-    o.execute(tab,store, dict);*/
   return 0;
 }
