@@ -9,7 +9,7 @@
 #include <boost/container/flat_map.hpp>
 #include <boost/dynamic_bitset.hpp>
 
-class DefaultValueCompressedStorage : public AStorage {
+class DefaultValueCompressedStorage final : public AStorage {
  public:
   explicit DefaultValueCompressedStorage(std::size_t len, value_id_t value)
       : _default_value(value), _exception_positions(len, true) {}

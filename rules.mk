@@ -169,7 +169,7 @@ CPPFLAGS :=
 CXXFLAGS :=
 COMMON_FLAGS :=
 LDFLAGS :=
-LIBS := log4cxx
+LIBS := 
 LINK_DIRS :=
 INCLUDE_DIRS :=
 
@@ -251,7 +251,7 @@ ci_build: ci_steps
 	cp $(PROJECT_ROOT)/makefiles/Makefile.default $@
 
 % :
-	$(call echo_cmd,LINK $(CXX) $(BLD) $@) $(CXX) $(CXXFLAGS) -o $@ $(filter %.o,$^) -Wl,-whole-archive $(addprefix -l,$(LIBS)) -Wl,-no-whole-archive $(addprefix -L,$(LINK_DIRS)) $(LDFLAGS)
+	$(call echo_cmd,LINK $(CXX) $(BLD) $@) $(CXX) $(CXXFLAGS) -o $@ $(filter %.o,$^) $(addprefix -l,$(LIBS)) $(addprefix -L,$(LINK_DIRS)) $(LDFLAGS)
 
 %.a:
 	$(call echo_cmd,AR $(AR) $@) $(AR) crs $@ $(filter %.o,$?)
