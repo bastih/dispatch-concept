@@ -6,10 +6,11 @@
 #define CATCH_CONFIG_MAIN
 #include "catch.hpp"
 
-/*#undef CHECK
+#undef CHECK
 #undef REQUIRE
-#define CHECK(ARG) assert(ARG)
-#define REQUIRE(ARG) assert(ARG)*/
+#define CHECK(ARG) if(!ARG)throw std::runtime_error("ARG failed");
+#define REQUIRE(ARG) CHECK(ARG)
+
 #define COMMON                                                  \
   public:                                                       \
   virtual void do_that() { _calls++; }                          \
