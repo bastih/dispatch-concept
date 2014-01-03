@@ -266,6 +266,10 @@ ci_build: ci_steps
 $(OBJDIR)%.cpp.o : %.cpp | $$(@D)/.fake
 	$(call echo_cmd,CXX $(CXX) $(BLD) $<) $(CXX) $(CPPFLAGS) $(CXXFLAGS) $(addprefix -I,$(INCLUDE_DIRS)) -c -o $@ $<
 
+$(OBJDIR)%.cc.o : %.cc | $$(@D)/.fake
+	$(call echo_cmd,CXX $(CXX) $(BLD) $<) $(CXX) $(CPPFLAGS) $(CXXFLAGS) $(addprefix -I,$(INCLUDE_DIRS)) -c -o $@ $<
+
+
 $(OBJDIR)%.c.o : %.c | $$(@D)/.fake
 	$(call echo_cmd,CC $(CC) $(BLD) $<) $(CC) $(CPPFLAGS) $(CFLAGS) $(addprefix -I,$(INCLUDE_DIRS)) -c -o $@ $<
 

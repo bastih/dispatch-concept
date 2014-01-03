@@ -1,15 +1,9 @@
 #include <cassert>
 
+#include "gtest/gtest.h"
+
 #include "dispatch/Typed.h"
 #include "dispatch/Operator.h"
-
-#define CATCH_CONFIG_MAIN
-#include "catch.hpp"
-
-#undef CHECK
-#undef REQUIRE
-#define CHECK(ARG) if(!ARG)throw std::runtime_error("ARG failed");
-#define REQUIRE(ARG) CHECK(ARG)
 
 #define COMMON                                                  \
   public:                                                       \
@@ -69,17 +63,17 @@ using multi_types_new =
     std::tuple<std::tuple<Child1, Child2>,
                std::tuple<Child1, Child2, Child3> >;
 
-TEST_CASE("new dispatch", "[dispatch]") {
+TEST(new_dispatch, dispatch) {
   Base* c1 = new Child1;
   Base* c2 = new Child2;
   Base* c3 = new Child3;
   SingleDispatchNew si;
   si.execute(c1);
-  REQUIRE(c1->do_that_calls() == 1);
+  EXPECT_TRUE(c1->do_that_calls() == 1);
   si.execute(c2);
-  REQUIRE(c2->do_that_calls() == 1);
+  EXPECT_TRUE(c2->do_that_calls() == 1);
   si.execute(c3);
-  REQUIRE(c3->do_this_calls() == 1);
+  EXPECT_TRUE(c3->do_this_calls() == 1);
 }
 
 class MultiDispatchNew : public OperatorNew<MultiDispatchNew, multi_types_new> {
@@ -101,25 +95,25 @@ class MultiDispatchNew : public OperatorNew<MultiDispatchNew, multi_types_new> {
 };
 
 
-TEST_CASE("new multi dispatch", "[dispatch]") {
+TEST(new_multi_dispatch, dispatch) {
   Base* c1 = new Child1;
   Base* c2 = new Child2;
   Base* c3 = new Child3;
   MultiDispatchNew mu;
   mu.execute(c1, c1);
-  REQUIRE(c1->do_that_calls() == 2);
+  EXPECT_TRUE(c1->do_that_calls() == 2);
   mu.execute(c1, c2);
-  REQUIRE(c1->do_that_calls() == 3);
-  REQUIRE(c2->do_that_calls() == 1);
+  EXPECT_TRUE(c1->do_that_calls() == 3);
+  EXPECT_TRUE(c2->do_that_calls() == 1);
   mu.execute(c3, c1);
-  REQUIRE(c3->do_this_calls() == 1);
+  EXPECT_TRUE(c3->do_this_calls() == 1);
 }
 
-TEST_CASE("multi dispatch on non-existant specialization", "[dispatch]") {
+TEST(new_multi_dispatch_on_nonexistant, dispatch) {
   Base* c2 =  new Child2;
   MultiDispatchNew mu;
   mu.execute(c2, c2);
-  REQUIRE(c2->do_this_calls() == 2);
+  EXPECT_TRUE(c2->do_this_calls() == 2);
 }
 
 
@@ -130,12 +124,12 @@ class SingleDispatchExtraParams : public OperatorNew<SingleDispatchExtraParams, 
   void execute_special(Base* c, int i) { c->do_this(); }
 };
 
-TEST_CASE("new dispatch with extra params", "[dispatch]") {
+TEST(extra_params, dispatch) {
   Base* c1 = new Child1;
   SingleDispatchExtraParams si;
   si.execute(c1, 10);
-  REQUIRE(c1->do_that_calls() == 1);
-  REQUIRE(c1->stored_value() == 10);
+  EXPECT_TRUE(c1->do_that_calls() == 1);
+  EXPECT_TRUE(c1->stored_value() == 10);
 }
 
 class TemplateDispatch : public OperatorNew<TemplateDispatch, multi_types_new> {
@@ -183,8 +177,8 @@ class TemplateDispatch2 {
   Base* c3 = new Child3;
   TemplateDispatch2 td2;
   dispatch<multi_types_new>(td2, c1, c2);
-  CHECK(c1->do_that_calls() == 1);
-  CHECK(c2->do_this_calls() == 1);
+  EXPECT_TRUE(c1->do_that_calls() == 1);
+  EXPECT_TRUE(c2->do_this_calls() == 1);
   dispatch<multi_types_new>(td2, c1, c1);
   dispatch<multi_types_new>(td2, c3, c3);
   }*/
@@ -200,19 +194,21 @@ class UnifiedDispatch : public OperatorNew<UnifiedDispatch, multi_types_new> {
   void execute_special(Base* a, Base* b) {}
 };
 
-TEST_CASE("unified dispatch", "[dispatch]") {
+TEST(unified_dispatch, dispatch) {
   UnifiedDispatch si;
   {
     Base* c1 = new Child1;
     si.execute(c1, c1);
-    CHECK(c1->do_that_calls() == 1);
-    CHECK(c1->do_this_calls() == 1);
+    EXPECT_TRUE(c1->do_that_calls() == 1);
+    EXPECT_TRUE(c1->do_this_calls() == 1);
   }
   {
     Base* c1 = new Child1;
     Base* c4 = new Child4;
     si.execute(c1, c4);
-    CHECK(c1->do_that_calls() == 0);
-    CHECK(c1->do_this_calls() == 0);
+    EXPECT_TRUE(c1->do_that_calls() == 0);
+    EXPECT_TRUE(c1->do_this_calls() == 0);
   }
 }
+
+#include "gtest/gtest_main.cc"
