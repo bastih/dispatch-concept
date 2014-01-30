@@ -46,7 +46,8 @@ void ScanOperator::execute() {
 
   for (const auto& part : _table->getVerticalPartitions(_column)) {
     o.offset = part.start;
-    o.execute(const_cast<ATable*>(part.table), const_cast<AStorage*>(part.storage),
+    o.execute(const_cast<ATable*>(part.table), 
+              const_cast<AStorage*>(part.storage),
               const_cast<ADictionary*>(part.dict));
   }
 }
