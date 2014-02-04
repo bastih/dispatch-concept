@@ -83,8 +83,8 @@ int main(int argc, char* const argv[]) {
     std::string mo { "Join"};
     JoinScan so(somestore.get(), smallstore.get(), col_t(4), col_t(4));
     times_measure({mo, "dispatch"}, [&]() {
-        so.execute();
-      });
+      so.execute();
+    });
     times_measure({mo, "fallback"}, [&]() {
         so.executeFallback();
       });

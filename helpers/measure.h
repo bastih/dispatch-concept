@@ -43,14 +43,14 @@ void times_measure(std::vector<std::string> names, F&& f, std::size_t i = 40) {
     pt.addEvent("PAPI_TOT_CYC");
     pt.addEvent("PAPI_TOT_INS");
     pt.addEvent("PAPI_L1_DCM");
-    pt.addEvent("PAPI_L2_DCM");
+    pt.addEvent("PAPI_L3_TCM");
     pt.start();
     f();
     pt.stop();
     values["CYC"].push_back(pt.value("PAPI_TOT_CYC"));
     values["INS"].push_back(pt.value("PAPI_TOT_INS"));
     values["L1M"].push_back(pt.value("PAPI_L1_DCM"));
-    values["L2M"].push_back(pt.value("PAPI_L2_DCM"));
+    values["L3M"].push_back(pt.value("PAPI_L3_TCM"));
   }
 
   print(PerformanceResults(names, values));

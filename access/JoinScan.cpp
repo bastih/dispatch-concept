@@ -1,5 +1,7 @@
 #include "JoinScan.h"
 
+#include <iostream>
+
 #include "dispatch2/dispatch.h"
 #include "storage/alltypes.h"
 
@@ -32,18 +34,18 @@ struct JoinScanImpl {
         if (outer_dict->getValue(outer_store->get(outer_row)) == inner_dict->getValue(inner_store->get(inner_row))) 
           join_positions.emplace_back(outer_row + outer_offset, inner_row + inner_offset);
   }
-
+  /*
   template <class ColumnType>
-  void execute(ATable* a, AStorage* a1, BaseDictionary<ColumnType>* a2,
-               ATable* b, AStorage* b1, BaseDictionary<ColumnType>* b2,
+  void execute(ATable* a, AStorage* a1, AbstractDictionary* a2,
+               ATable* b, AStorage* b1, AbstractDictionary* b2,
                std::size_t outer_offset, std::size_t inner_offset) {
     execute(a, a1, static_cast<BaseDictionary<ColumnType>*>(a2),
             b, b1, static_cast<BaseDictionary<ColumnType>*>(b2),
-            outer_offset, inner_offset); }
+            outer_offset, inner_offset); }*/
 };
 
 dispatch< product<jtables, jstorages, jdicts<dis_int>, jtables, jstorages, jdicts<dis_int> > , 
-          JoinScanImpl, 
+          JoinScanImpl,
           void, std::tuple<size_t, size_t> > join_dispatch;
 
 void JoinScan::execute() {
@@ -63,6 +65,7 @@ void JoinScan::execute() {
                    outer_part.offset,
                    inner_part.offset);
     }
+
   }
 }
 
