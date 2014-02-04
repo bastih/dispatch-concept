@@ -4,22 +4,25 @@
 #include <string>
 
 #include "storage/alltypes.h"
-#include "dispatch/Operator.h"
+#include "dispatch2/dispatch.h"
 
 
-class MatScanOperatorImpl : public OperatorNew<MatScanOperatorImpl, all_types_new> {
+class MatScanOperatorImpl {
  public:
   std::vector<std::string> materialized_row;
   std::size_t row;
   std::size_t col;
 
   template <typename TAB, typename STORE, typename DICT>
-  void execute_special(TAB* t, STORE* s, DICT* d) {
+  void execute(TAB* t, STORE* s, DICT* d) {
     materialized_row.push_back(d->getValueString(s->get(row)));
   }
 };
 
 MaterializingScanOperator::MaterializingScanOperator(ATable* t, std::size_t row) : _table(t), _row(row) {}
+
+
+dispatch< product<table_types, storage_types, dictionary_types> , MatScanOperatorImpl, void > matscan_dispatch;
 
 void MaterializingScanOperator::execute() {
   MatScanOperatorImpl o;
@@ -27,7 +30,7 @@ void MaterializingScanOperator::execute() {
   for (const auto& part : _table->getHorizontalPartitions(_row)) {
     o.row = part.offset;
     o.col = part.start;
-    o.execute(const_cast<ATable*>(part.table), const_cast<AStorage*>(part.storage),
+    matscan_dispatch(o, const_cast<ATable*>(part.table), const_cast<AStorage*>(part.storage),
               const_cast<ADictionary*>(part.dict));
   }
   result = o.materialized_row;
@@ -39,7 +42,7 @@ void MaterializingScanOperator::executeFallback() {
   for (const auto& part : _table->getHorizontalPartitions(_row)) {
     o.row = part.offset;
     o.col = part.start;
-    o.execute_special(const_cast<ATable*>(part.table), const_cast<AStorage*>(part.storage),
+    o.execute(const_cast<ATable*>(part.table), const_cast<AStorage*>(part.storage),
                        const_cast<ADictionary*>(part.dict));
   }
   result = o.materialized_row;

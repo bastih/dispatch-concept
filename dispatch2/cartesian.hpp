@@ -1,4 +1,7 @@
 #pragma once
+
+
+
 template <typename S, typename T> struct mtuple_cat;
 
 template <typename ...Ss, typename ...Ts>
@@ -7,6 +10,7 @@ struct mtuple_cat<std::tuple<Ss...>, std::tuple<Ts...>>
   typedef std::tuple<Ss..., Ts...> type;
 };
 
+namespace detail {
 template <typename S, typename T> struct product;
 
 template <typename S, typename ...Ss, typename ...Ts>
@@ -57,3 +61,20 @@ struct flat_typelists< std::tuple<T...> > {
   using type = std::tuple< typename flatten<T>::type... >;
 };
 
+
+template <typename... S> struct product_many;
+
+template <typename T, typename... ARGS>
+struct product_many<T, ARGS...> {
+  using type = typename product<T, typename product_many<ARGS...>::type>::type;
+};
+
+template <>
+struct product_many<> {
+  using type = std::tuple<std::tuple<>>;
+};
+
+} // ns detail
+
+template <typename... ARGS>
+using product = typename detail::flat_typelists<typename detail::product_many<ARGS...>::type>::type;

@@ -1,17 +1,17 @@
 #include "access/ScanOperator.h"
 
 #include "storage/alltypes.h"
-#include "dispatch/Operator.h"
+#include "dispatch2/dispatch.h"
 
 template <typename T>
-class ScanOperatorImpl : public OperatorNew<ScanOperatorImpl<T>, all_types_new> {
+class ScanOperatorImpl {
  public:
   std::vector<std::size_t> positions;
   T needle;
   std::size_t offset;
 
   template <typename TAB, template <class>  class Dictionary>
-  void execute_special(TAB*, FixedStorage* fs, Dictionary<T>* t) {
+  void execute(TAB*, FixedStorage* fs, Dictionary<T>* t) {
     value_id_t vid = t->getSubstitute(needle);
     for (std::size_t i = 0, e = fs->rows(); i < e; ++i) {
       if (fs->get(i) == vid) {
@@ -21,21 +21,26 @@ class ScanOperatorImpl : public OperatorNew<ScanOperatorImpl<T>, all_types_new> 
   }
 
   template <typename TAB, template <class> class Dictionary>
-  void execute_special(TAB*, DefaultValueCompressedStorage* dv, Dictionary<T>* t) {
+  void execute(TAB*, DefaultValueCompressedStorage* dv, Dictionary<T>* t) {
     value_id_t vid = t->getSubstitute(needle);
     dv->createPositionList(vid, offset, positions);
   }
 
-  void execute_special(ATable*, AStorage* s, ADictionary* d) {
+  void execute(ATable* t, AStorage* st, ADictionary* d) {
     auto bd = static_cast<BaseDictionary<T>*>(d);
+    
     value_id_t vid = bd->getSubstitute(needle);
-    for (std::size_t i = 0, real_pos = offset, e = s->rows(); i < e; ++i, ++real_pos) {
-      if (s->get(i) == vid) {
+    for (std::size_t i = 0, real_pos = offset, e = st->rows(); i < e; ++i, ++real_pos) {
+      if (st->get(i) == vid) {
         positions.push_back(real_pos);
       }
     }
   }
 };
+
+// TODO explode: all_types_new
+
+dispatch< product<table_types, storage_types, dictionary_types> , ScanOperatorImpl<dis_int>, void > scan_dispatch;
 
 ScanOperator::ScanOperator(ATable* t, std::size_t column, dis_int value)
     : _table(t), _column(column), _value(value) {}
@@ -46,9 +51,10 @@ void ScanOperator::execute() {
 
   for (const auto& part : _table->getVerticalPartitions(_column)) {
     o.offset = part.start;
-    o.execute(const_cast<ATable*>(part.table), 
+    scan_dispatch(o,
+              const_cast<ATable*>(part.table), 
               const_cast<AStorage*>(part.storage),
-              const_cast<ADictionary*>(part.dict));
+                  const_cast<ADictionary*>(part.dict));
   }
 }
 
@@ -57,7 +63,7 @@ void ScanOperator::executeFallback() {
   o.needle = _value;
   for (const auto& part : _table->getVerticalPartitions(_column)) {
     o.offset = part.start;
-    o.execute_special(const_cast<ATable*>(part.table), const_cast<AStorage*>(part.storage),
+    o.execute(const_cast<ATable*>(part.table), const_cast<AStorage*>(part.storage),
                        const_cast<ADictionary*>(part.dict));
   }
 }

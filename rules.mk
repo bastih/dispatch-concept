@@ -165,7 +165,7 @@ OSNAME := $(shell uname -s)
 	@touch $@ 
 
 CFLAGS :=
-CPPFLAGS :=
+CPPFLAGS := -Wfatal-errors
 CXXFLAGS :=
 COMMON_FLAGS :=
 LDFLAGS :=

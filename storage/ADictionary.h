@@ -1,13 +1,13 @@
 #pragma once
 
-#include "dispatch/Typed.h"
+#include "dispatch2/Base.h"
 #include "storage/types_fwd.h"
 
 namespace std {
 inline std::string to_string(const std::string& s) { return s; }
 }
 
-class ADictionary : public Typed {
+class ADictionary : public Base {
  public:
   ~ADictionary();
   virtual std::string getValueString(value_id_t) const = 0;

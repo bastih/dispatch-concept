@@ -1,9 +1,9 @@
 #pragma once
 
-#include "dispatch/Typed.h"
+#include "dispatch2/Base.h"
 #include "storage/types_fwd.h"
 
-class AStorage : public Typed {
+class AStorage : public Base {
  public:
   virtual ~AStorage();
   virtual void set(std::size_t x, value_id_t vid) = 0;
