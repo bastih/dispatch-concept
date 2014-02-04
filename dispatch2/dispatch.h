@@ -50,11 +50,11 @@ struct dispatch {
     
     template <typename... T>
     void operator()(std::tuple<T...>&) {
-      _t.insert({std::make_tuple(std::type_index(typeid(typename std::remove_pointer<T>::type))...),
+      _t.insert(typename func_map_t::value_type(std::make_tuple(std::type_index(typeid(typename std::remove_pointer<T>::type))...),
             [] (dispatch_types_base_t params) {
             using tn = typename mtuple_cat<std::tuple<functor_type*, T...>, extra_params_t>::type;
             return apply<return_type_t>(call_special<return_type_t>, params, *(tn*) &params);
-          }});
+                                       }));
     }
   };
 
