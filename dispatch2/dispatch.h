@@ -44,7 +44,7 @@ struct dispatch {
   using key_t = ntuple<std::type_index, num_params>;
   using func_map_t = std::unordered_map<key_t, base_function_type_t>;
   
-  using Init = struct InitFunctor {
+  struct InitFunctor {
     func_map_t& _t;
     explicit InitFunctor(func_map_t& t) : _t(t) {}
     
@@ -61,7 +61,7 @@ struct dispatch {
   func_map_t _choices;
 
   dispatch() {
-    Init inserter(_choices);
+    InitFunctor inserter(_choices);
     for_each(*(dispatch_types_t*) nullptr, inserter);
   }
 
