@@ -2,5 +2,5 @@
 
 class Base {
  public:
-  virtual ~Base() = default;
+  virtual ~Base();
 };

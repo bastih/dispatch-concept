@@ -44,24 +44,24 @@ struct dispatch {
   using key_t = ntuple<std::type_index, num_params>;
   using func_map_t = std::unordered_map<key_t, base_function_type_t>;
   
-  using Init = struct InitFunctor {
+  struct InitFunctor {
     func_map_t& _t;
     explicit InitFunctor(func_map_t& t) : _t(t) {}
     
     template <typename... T>
     void operator()(std::tuple<T...>&) {
-      _t.insert({std::make_tuple(std::type_index(typeid(typename std::remove_pointer<T>::type))...),
+      _t.insert(typename func_map_t::value_type(std::make_tuple(std::type_index(typeid(typename std::remove_pointer<T>::type))...),
             [] (dispatch_types_base_t params) {
             using tn = typename mtuple_cat<std::tuple<functor_type*, T...>, extra_params_t>::type;
-            return apply<return_type_t>(call_special<return_type_t>, params, *(tn*) 0);
-          }});
+            return apply<return_type_t>(call_special<return_type_t>, params, *(tn*) &params);
+                                       }));
     }
   };
 
   func_map_t _choices;
 
   dispatch() {
-    Init inserter(_choices);
+    InitFunctor inserter(_choices);
     for_each(*(dispatch_types_t*) nullptr, inserter);
   }
 
