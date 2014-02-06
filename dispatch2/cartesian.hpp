@@ -10,6 +10,23 @@ struct mtuple_cat<std::tuple<Ss...>, std::tuple<Ts...>>
   typedef std::tuple<Ss..., Ts...> type;
 };
 
+template <typename... S> 
+struct cat_impl;
+
+template <> 
+struct cat_impl<> {
+  using type = std::tuple<>;
+};
+
+template <typename S, typename... Ss>
+struct cat_impl<S, Ss...> {
+  using type = typename mtuple_cat<S, typename cat_impl<Ss...>::type>::type;
+};
+
+template <typename... Ts>
+using cat = typename cat_impl<Ts...>::type;
+
+
 namespace detail {
 template <typename S, typename T> struct product;
 
