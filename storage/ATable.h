@@ -32,7 +32,7 @@ class ATable : public Base {
   virtual std::size_t height() const NOTIMPLEMENTED;
   virtual partitions_t getVerticalPartitions(std::size_t column) const NOTIMPLEMENTED;
   virtual partitions_t getHorizontalPartitions(std::size_t row) const NOTIMPLEMENTED;
-
+  virtual partition_t getPartition(std::size_t column, std::size_t row) const NOTIMPLEMENTED;
   /// BAAAAD GURL
   template <typename T>
   T getValue(std::size_t col, std::size_t row) const {

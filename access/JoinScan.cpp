@@ -48,6 +48,11 @@ dispatch< product<jtables, jstorages, jdicts<dis_int>, jtables, jstorages, jdict
           JoinScanImpl,
           void, std::tuple<size_t, size_t> > join_dispatch;
 
+dispatch< product<jtables, jstorages, jdicts<dis_int>, jtables, jstorages, jdicts<dis_int> > , 
+          JoinScanImpl,
+          void, std::tuple<size_t, size_t> > join_dispatch2;
+
+
 void JoinScan::execute() {
   JoinScanImpl impl;
 
@@ -65,7 +70,6 @@ void JoinScan::execute() {
                    outer_part.offset,
                    inner_part.offset);
     }
-
   }
 }
 

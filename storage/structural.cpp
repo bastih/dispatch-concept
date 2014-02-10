@@ -41,6 +41,12 @@ partitions_t Vertical::getHorizontalPartitions(std::size_t row) const {
   return r;
 }
 
+partition_t Vertical::getPartition(std::size_t column, std::size_t row) const {
+  std::size_t part_index, column_offset;
+  std::tie(part_index, column_offset) = partForColumn(column);
+  return _parts[part_index]->getPartition(column_offset, row);
+}
+
 std::pair<std::size_t, std::size_t> Vertical::partForColumn(std::size_t column) const {
   std::size_t column_offset = 0u;
   std::size_t part_index = 0u;
@@ -69,7 +75,6 @@ value_id_with_dict_t Vertical::getValueId(std::size_t col, std::size_t row) cons
 }
 
 
-
 std::size_t Horizontal::width() const { return _parts.at(0)->width(); }
 std::size_t Horizontal::height() const {
   return std::accumulate(ALL(_parts),
@@ -82,6 +87,12 @@ partitions_t Horizontal::getHorizontalPartitions(std::size_t row) const {
   std::size_t part_index, row_offset;
   std::tie(part_index, row_offset) = partForRow(row);
   return _parts[part_index]->getHorizontalPartitions(row_offset);
+}
+
+partition_t Horizontal::getPartition(std::size_t column, std::size_t row) const {
+  std::size_t part_index, row_offset;
+  std::tie(part_index, row_offset) = partForRow(row);
+  return _parts[part_index]->getPartition(column, row_offset);
 }
 
 partitions_t Horizontal::getVerticalPartitions(std::size_t column) const {
@@ -135,6 +146,7 @@ std::pair<std::size_t, std::size_t> Horizontal::partForRow(std::size_t row) cons
 std::size_t Table::height() const { return _storage->rows(); }
 
 std::size_t Table::width() const { return 1; }
+
 partitions_t Table::getVerticalPartitions(std::size_t column) const {
   assert(column < width());
   return {partition_t{0, _storage->rows(), column, this, _storage.get(), _dictionary.get()}};
@@ -143,6 +155,10 @@ partitions_t Table::getVerticalPartitions(std::size_t column) const {
 partitions_t Table::getHorizontalPartitions(std::size_t row) const {
   assert(row < height());
   return {partition_t{0, 1, row, this, _storage.get(), _dictionary.get()}};
+}
+
+partition_t Table::getPartition(std::size_t column, std::size_t row) const {
+  return {0, column, row, this, _storage.get(), _dictionary.get() };
 }
 
 value_id_with_dict_t Table::getValueId(std::size_t col, std::size_t row) const {

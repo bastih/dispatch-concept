@@ -16,7 +16,7 @@ class Vertical : public ATable {
   std::size_t height() const override;
   partitions_t getVerticalPartitions(std::size_t column) const override;
   partitions_t getHorizontalPartitions(std::size_t row) const override;
-
+  partition_t getPartition(std::size_t column, std::size_t row) const override;
   void cacheOffsets() override;
   value_id_with_dict_t getValueId(std::size_t col, std::size_t row) const;
  private:
@@ -33,7 +33,7 @@ class Horizontal : public ATable {
   std::size_t height() const override;
   partitions_t getVerticalPartitions(std::size_t column) const override;
   partitions_t getHorizontalPartitions(std::size_t row) const override;
-
+  partition_t getPartition(std::size_t column, std::size_t row) const override;
   void cacheOffsets() override;
   value_id_with_dict_t getValueId(std::size_t col, std::size_t row) const override;
  private:
@@ -50,6 +50,7 @@ class Table final : public ATable {
   std::size_t height() const override;
   partitions_t getVerticalPartitions(std::size_t column) const override;
   partitions_t getHorizontalPartitions(std::size_t row) const override;
+  partition_t getPartition(std::size_t column, std::size_t row) const override;
   value_id_with_dict_t getValueId(std::size_t col, std::size_t row) const
       override;
  private:

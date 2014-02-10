@@ -61,17 +61,28 @@ void for_each( std::tuple<Args...>&& tup, Func&& f)
 
 
 
-template <class Ret, class... Rep, class... Args, int... Indexes>
-Ret apply_helper(Ret (*pf)(Rep...), index_tuple<Indexes...>, std::tuple<Rep...> t, std::tuple<Args...>&& tup) {
-  return pf(static_cast<typename std::remove_reference<decltype(std::get<Indexes>(t))>::type>(std::get<Indexes>(tup))...);
+template <class Ret, class... Args, int... Indexes>
+Ret apply_helper(Ret (*pf)(Args...), index_tuple<Indexes...>, /*std::tuple<Rep...> t,*/ std::tuple<Args...>&& tup) {
+  return pf(std::get<Indexes>(tup)...);
 }
 
-template <class Ret, class... Rep, class... Args>
-Ret apply(Ret (*pf)(Rep...), const std::tuple<Args...>& tup, std::tuple<Rep...> t) {
-  return apply_helper(pf, typename make_indexes<Args...>::type(), t, std::tuple<Args...>(tup));
+template <class Ret, class... Args>
+Ret apply(Ret (*pf)(Args...), const std::tuple<Args...>& tup /*std::tuple<Rep...> t*/) {
+  return apply_helper<Ret>(pf, typename make_indexes<Args...>::type(), /*t,*/ std::tuple<Args...>(tup));
 }
 
-//template <class Ret, class... Args>
-//Ret apply(Ret (*pf)(Args...), std::tuple<Args...>&& tup) {
-//  return apply_helper(pf, typename make_indexes<Args...>::type(), std::forward<std::tuple<Args...>>(tup));
-//}
+template <class Ret, class... Args>
+Ret apply(Ret (*pf)(Args...), std::tuple<Args...>&& tup) {
+  return apply_helper(pf, typename make_indexes<Args...>::type(), std::forward<std::tuple<Args...>>(tup));
+}
+
+
+template <class... Args, class... CastArgs, int... Indexes>
+std::tuple<CastArgs...> conv_helper(const std::tuple<Args...>& tuple, index_tuple<Indexes...>, std::tuple<CastArgs...>) {
+  return std::make_tuple(static_cast<typename std::tuple_element<Indexes, std::tuple<CastArgs...>>::type>(std::get<Indexes>(tuple))...);
+}
+
+template <class CastArg, class... Args>
+CastArg conv(const std::tuple<Args...>& source) {
+  return conv_helper(source, typename make_indexes<Args...>::type(), CastArg());
+}
