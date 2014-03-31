@@ -10,7 +10,7 @@
    * Dispatch with extra parameters
  */
 
-
+/*
 class EmptyOperation {
   void execute(ABase* a) { a->method(); }
 };
@@ -39,3 +39,4 @@ class ThreeParamOperation {
 int main() {
 
 }
+*/

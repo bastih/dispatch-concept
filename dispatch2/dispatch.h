@@ -13,7 +13,7 @@
 #include "foreach.hpp"
 #include "repeat.hpp"
 
-template < class RETURN_TYPE, class O, class... ARGS>
+template <class RETURN_TYPE, class O, class... ARGS>
 RETURN_TYPE call_special(O* op, ARGS... args) {
   return op->execute(args...);
 }

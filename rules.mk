@@ -162,14 +162,14 @@ OSNAME := $(shell uname -s)
 
 %.mk: makefiles/%.default.mk
 	@[ -e $@ ] || echo "Grabbing default $@"; cp $< $@
-	@touch $@ 
+	@touch $@
 
 CFLAGS :=
 CPPFLAGS := -Wfatal-errors
 CXXFLAGS :=
 COMMON_FLAGS :=
 LDFLAGS :=
-LIBS := 
+LIBS :=
 LINK_DIRS :=
 INCLUDE_DIRS :=
 
