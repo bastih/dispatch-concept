@@ -1,13 +1,12 @@
 #include <vector>
 #include <type_traits>
-//#include "../dispatch2/dispatch.h"
+#include "../dispatch2/dispatch.h"
 #include "../dispatch2/foreach.hpp"
 
-//Base::~Base() {}
+Base::~Base() {}
 
-class DBase /*: public Base*/ {
+class DBase : public Base {
 public:
-    virtual ~DBase() = default;
   virtual size_t method() = 0;
 };
 
@@ -21,9 +20,9 @@ class Child{{num}} final : public DBase {
 class Operation {
 public:
   size_t sum = 0;
-    //template <typename T>
-    void execute(DBase* db) {
-        for (size_t i=0; i<1000; ++i) {
+    template <typename T>
+    void execute(T* db) {
+        for (size_t i=0; i < 100; ++i) {
             sum += db->method();
         }
     }
@@ -63,9 +62,8 @@ int main() {
   auto instances = createTypes();
 /* perf trace here */
 Operation op;
-//dispatch<types, Operation, void> dp;
+dispatch<types, Operation, void> dp;
   for(const auto& instance: instances)
-      op.execute(instance);
-      //dp(op, instance);
+    dp(op, instance);
 /* perf trace here */
 }

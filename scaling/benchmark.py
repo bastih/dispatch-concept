@@ -15,7 +15,6 @@ def time_call(call, times):
         ret = subprocess.call(call)
         end = datetime.now()
         if(ret != 0):
-            print time
             raise CompileException()
         compile_times.append((end-start).total_seconds())
     return compile_times
@@ -26,7 +25,6 @@ def average(compile_times):
 def memory_consumption(call):
     ret = subprocess.call(["/usr/bin/time", "-v", "-o", "timeoutput"] + call)
     if(ret != 0):
-        print "memory"
         raise CompileException()
     for line in open("timeoutput").readlines():
         if line.strip().startswith("Maximum resident set size (kbytes):"):
@@ -39,7 +37,7 @@ template = env.get_template('bench.cpp')
 Compiler = namedtuple("Compiler", ["name", "path"])
 Flags = namedtuple("Flags", ["name", "flags"])
 
-RUNS = 1
+RUNS = 5
 
 def run(compiler, flags, child_classes):
     with open("benchmark.cpp", "w") as f:
@@ -56,15 +54,13 @@ def run(compiler, flags, child_classes):
 
 def main():
     print ",".join(["compiler", "flags", "num_cls", "binary_size", "compile_time_avg", "compile_time_std", "compile_time_memory", "run_time_avg", "run_time_std", "run_time_memory"])
-    for compiler in [Compiler._make(("g++", "g++")), Compiler._make(("clang++", "/home/vagrant/clang34/bin/clang++"))]:
-        for child_classes in [1,2,4,8]: #+ range(10, 100, 10):
-            for flags in [Flags._make(("debug", ["-O0", "-ggdb"])),
+    for compiler in [Compiler._make(("g++", "g++")), Compiler._make(("clang++", "/home/hillig/clang34/bin/clang++"))]:
+        for child_classes in [1,2,4,8] + range(10, 100, 10):
+            for flags in [Flags._make(("debug", ["-O0"])),
+                          Flags._make(("debug with gdb", ["-O0", "-ggdb"])),
                           Flags._make(("release", ["-O3"])),
-                          Flags._make(("release with debug", ["-O3", "-ggdb"])),
-                          Flags._make(("release with flto", ["-O3", "-flto"])),
-                          Flags._make(("release with size optimization", ["-Os", "-finline-functions", "-frename-registers", "-march=native", "-fomit-frame-pointer", "-s"]))
-            ]:
-
+                          Flags._make(("release with gdb", ["-O3", "-ggdb"])),
+                          ]:
                 try:
                     run(compiler, flags, child_classes)
                 except CompileException:
