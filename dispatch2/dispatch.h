@@ -42,7 +42,8 @@ template <typename dispatch_types_t,
 struct dispatch {
   using example_param_t = typename std::tuple_element<0, dispatch_types_t>::type;
   static constexpr auto num_params = std::tuple_size<example_param_t>::value;
-  using dispatch_types_base_t = cat<std::tuple<functor_type*>, ntuple<Base*, num_params>, extra_params_t>;
+  using dispatched_function_types = cat<ntuple<Base*, num_params>, extra_params_t>;
+  using dispatch_types_base_t = cat<std::tuple<functor_type*>, dispatched_function_types>;
   using base_function_type_t = std::function<return_type_t(dispatch_types_base_t) >;
   using key_t = ntuple<std::type_index, num_params>;
   using func_map_t = std::unordered_map<key_t, base_function_type_t>;
@@ -64,6 +65,7 @@ struct dispatch {
   func_map_t _choices;
 
   dispatch() {
+    _choices.reserve(std::tuple_size<dispatch_types_t>::value);
     InitFunctor inserter(_choices);
     for_each(*(dispatch_types_t*) nullptr, inserter);
   }
@@ -79,8 +81,24 @@ struct dispatch {
     }
   }
 
+  template <int num=0, bool done = num == num_params, typename... TS>
+  struct check;
+
+  template <int num, typename T, typename... TS>
+  struct check<num, false, T, TS...> {
+    static_assert(std::is_polymorphic<typename std::remove_pointer<T>::type>::value, "Param must be polymorphic");
+    check<num+1, num+1 == num_params, TS...> c;
+  };
+
+  template <int num, typename... TS>
+  struct check<num, true, TS...> {
+    static_assert(num != 0, "dispatch on zero params");
+  };
+
   template <typename... call_types_t>
   return_type_t operator()(functor_type& f, call_types_t... args) {
+    check<0, 0 == num_params, call_types_t...>  __attribute__ ((unused)) c;
+    static_assert(std::tuple_size<std::tuple<call_types_t...>>::value == std::tuple_size<dispatched_function_types>::value, "Trying to call with too few parameters");
     return call(&f, args...);
   }
 };

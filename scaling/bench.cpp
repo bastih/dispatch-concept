@@ -11,7 +11,7 @@ public:
   virtual size_t method() = 0;
 };
 
-{% for num in range(100) %}
+{% for num in range(1000) %}
 class Child{{num}} final : public DBase {
  public:
   virtual size_t method() { return {{num}}; }
