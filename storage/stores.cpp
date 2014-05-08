@@ -55,10 +55,13 @@ void DefaultValueCompressedStorage::createPositionListFromDefault(
     start = set_bit_pos;
   }
   positions.resize(positions.size() + sum_new_bits);
+  std::size_t off = 0;
   for (const auto& range : ranges) {
-    std::iota(positions.begin() + offset + range._start,
-              positions.begin() + offset + range._stop,
+    auto elements = range._stop - range._start;
+    std::iota(positions.begin() + offset + off,
+              positions.begin() + offset + off + elements,
               range._start + offset);
+    off += elements;
   }
 }
 void DefaultValueCompressedStorage::createPositionListForException(

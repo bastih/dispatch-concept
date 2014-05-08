@@ -2,7 +2,7 @@
 
 #include <cassert>
 #include <algorithm>
-
+#include <iostream>
 #include "helpers/shortcuts.h"
 #include "helpers/Range.h"
 
@@ -123,10 +123,10 @@ void Horizontal::cacheOffsets() {
 value_id_with_dict_t Horizontal::getValueId(std::size_t col, std::size_t row) const {
   std::size_t part = 0;
   std::size_t offset = 0;
-  for (std::size_t coffset : _cached_offsets) {
-    if (offset + coffset > row) break;
+  for (const auto& coffset : _cached_offsets) {
+    if (coffset > row) break;
+    offset = coffset;
     part++;
-    offset += coffset;
   }
   return _parts[part]->getValueId(col, row - offset);
 }
