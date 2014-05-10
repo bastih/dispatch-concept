@@ -10,14 +10,14 @@
 
 int main(int argc, char* const argv[]) {
     auto t = makeSomeTable();
-    t->cacheOffsets();
+    /*    t->cacheOffsets();
     std::cout << t->width() << " " << t->height() << std::endl;
     for (size_t row=0; row < t->height(); row++) {
         for (size_t col=0; col < t->width(); col++) {
             std::cout << t->getValue<dis_int>(col, row) << "\t|";
         }
         std::cout << std::endl;
-    }
+        }*/
     exit(0);
     for (double x: {10, 100, 1000, 10000, 100000, 1000*1000, 10*1000*1000 }) {
         std::cerr << "Making store with rows: " << x << std::endl;

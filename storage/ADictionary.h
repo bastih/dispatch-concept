@@ -11,6 +11,8 @@ class ADictionary : public Base {
  public:
   ~ADictionary();
   virtual std::string getValueString(value_id_t) const = 0;
+  virtual std::size_t size() const = 0;
+  virtual void structure(std::ostream& out, size_t level=0) const { out << std::string(level, ' ') << "ADictionary sz:" << size() << std::endl; }
 };
 
 template <typename T>
