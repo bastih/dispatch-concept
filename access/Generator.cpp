@@ -8,6 +8,7 @@
 #include "storage/dicts.h"
 #include "storage/structural.h"
 
+using rand_engine = std::mt19937;
 
 std::unique_ptr<BaseDictionary<dis_int>> makeOrderedDict(std::size_t sz=UPPER_VID) {
     auto d = make_unique<OrderedDictionary<dis_int>>();
@@ -15,35 +16,34 @@ std::unique_ptr<BaseDictionary<dis_int>> makeOrderedDict(std::size_t sz=UPPER_VI
     return std::move(d);
 }
 
-std::unique_ptr<BaseDictionary<dis_int>> makeUnorderedDict(std::size_t sz=UPPER_VID, std::size_t offset=0) {
+std::unique_ptr<BaseDictionary<dis_int>> makeUnorderedDict(std::size_t sz=UPPER_VID) {
     auto d = make_unique<UnorderedDictionary<dis_int>>();
-    for (dis_int i = sz; i >= 0; --i) d->add(i+offset);  // add vids in reverse
+    for (dis_int i = sz; i >= 0; --i) d->add(i);  // add vids in reverse
     return std::move(d);
 }
 
-std::unique_ptr<BaseDictionary<dis_int>> makeOrderedDictV(const std::set<dis_int>& values) {
+std::unique_ptr<BaseDictionary<dis_int>> makeOrderedDictV(const std::set<value_id_t>& values) {
     auto d = make_unique<OrderedDictionary<dis_int>>();
-    for (const auto& val : values) {
-        d->add(val);
+    /*for (const auto& val : values) {
+      d->add(val);
+        }*/
+    for (size_t i = 0, e= *values.rbegin()+1; i<e; i++) {
+        d->add(i);
     }
-    //for (dis_int i = 0; i <= sz; i++) d->add(i);
     return std::move(d);
 }
 
-std::unique_ptr<BaseDictionary<dis_int>> makeUnorderedDictV(const std::set<dis_int>& values) {
+std::unique_ptr<BaseDictionary<dis_int>> makeUnorderedDictV(const std::set<value_id_t>& values) {
     auto d = make_unique<UnorderedDictionary<dis_int>>();
-
-    std::vector<dis_int> vals(values.begin(), values.end());
-    std::random_shuffle(vals.begin(), vals.end());
-        for (const auto& val : vals) {
-            d->add(val);
-        }
+    for (size_t i = *values.rbegin()+1, e=0; i != e; i--) {
+        d->add(i);
+    }
     return std::move(d);
 }
 
 
 using table_func = std::function<std::unique_ptr<ATable>()>;
-static thread_local std::random_device rd;
+static thread_local rand_engine rd;
 
 template <typename T>
 std::unique_ptr<ATable> make(std::vector<table_func> funcs) {
@@ -54,18 +54,22 @@ std::unique_ptr<ATable> make(std::vector<table_func> funcs) {
     return make_unique<T>(std::move(ves));
 }
 
-using dist_func = std::function<dis_int(std::random_device&)>;
-using dict_func = std::function<std::unique_ptr<BaseDictionary<dis_int>>(const std::set<dis_int>&)>;
+using dist_func = std::function<value_id_t(rand_engine&)>;
+using dict_func = std::function<std::unique_ptr<BaseDictionary<dis_int>>(std::size_t)>;
 
-std::unique_ptr<ATable> makeRandomIntFixedTable(std::size_t rows, dict_func dict_func, dist_func distf){
-    auto fs = make_unique<FixedStorage>(rows);
-    std::set<dis_int> values;
+std::unique_ptr<ATable> makeRandomIntFixedTable(AStorage* fs, std::size_t distinct, std::size_t rows, dict_func dict_func, dist_func distf){
+    //auto fs = make_unique<FixedStorage>(rows);
+    //std::set<value_id_t> values;
+    auto dict = dict_func(distinct);
+    //std::cout << typeid(*fs).name() << std::endl;
     for (auto i = 0ul; i < rows; ++i) {
-        auto val = distf(rd);
-        auto it = values.insert(val);
-        fs->set(i, std::distance(std::begin(values), it.first));
+        auto val = dict->getSubstitute(distf(rd));
+        //std::cout << val << " ";
+        //values.insert(val);
+        fs->set(i, val);
     }
-    return make_unique<Table>(std::move(fs), dict_func(values));
+    //std::cout << std::endl;
+    return make_unique<Table>(std::unique_ptr<AStorage>(fs), std::move(dict));
 }
 
 std::vector<size_t> makePartOffsets(std::size_t num, std::size_t rows) {
@@ -80,21 +84,45 @@ std::vector<size_t> makePartOffsets(std::size_t num, std::size_t rows) {
     return ret;
 }
 
-
+std::unique_ptr<ATable> makeEqualPartitionTable(std::size_t rows, std::size_t cols, std::size_t parts) {
+    size_t vids_max = rows / 100;
+    auto column_func = [&] () {
+        auto offsets = makePartOffsets(parts, rows);
+        std::vector<table_func> pgs;
+        auto unif = [=] (rand_engine& rd) { std::uniform_int_distribution<value_id_t> dist(0, vids_max); return dist(rd); };
+        for (auto offset : offsets) {
+            pgs.push_back(std::bind(makeRandomIntFixedTable, new FixedStorage(offset), vids_max, offset, makeOrderedDict, unif));
+        }
+        return make<Horizontal>(pgs);
+    };
+    std::vector<table_func> colfuncs;
+    for (std::size_t i=0; i < cols; i++) {
+        colfuncs.push_back(column_func);
+    }
+    auto tab = make<Vertical>(colfuncs);
+    tab->structure(std::cout);
+    return tab;
+}
 
 std::unique_ptr<ATable> makeSomeTable() {
-    std::size_t rows = 1000000;
-    std::size_t cols = 14;
+    std::size_t rows = 40;
+    std::size_t cols = 1;
     std::size_t num_parts = 2;
     std::size_t vids_max = 30;
     auto column_func = [&] () {
         auto offsets = makePartOffsets(num_parts, rows);
         std::vector<table_func> pgs;
-        auto func = [=] (std::random_device& rd) { std::uniform_int_distribution<int> dist(0, vids_max); return dist(rd); };
-        auto func2 = [=] (std::random_device& rd) { std::geometric_distribution<> dist(0.8); return dist(rd); };
+        auto unif = [=] (rand_engine& rd) { std::uniform_int_distribution<value_id_t> dist(0, vids_max); return dist(rd); };
+        auto geom = [=] (rand_engine& rd) { std::geometric_distribution<> dist(0.8);
+                                            if (dist(rd) == 0)
+                                                return 0u;
+                                            else
+                                                return std::uniform_int_distribution<value_id_t>(0, vids_max)(rd); };
         for (auto offset : offsets) {
-            pgs.push_back(std::bind(makeRandomIntFixedTable, offset, makeUnorderedDictV, func));
-            //pgs.push_back(std::bind(makeRandomIntFixedTable, offset, makeOrderedDictV, func2));
+            pgs.push_back(std::bind(makeRandomIntFixedTable, new FixedStorage(offset), vids_max, offset, makeOrderedDict, geom));
+            pgs.push_back(std::bind(makeRandomIntFixedTable, new DefaultValueCompressedStorage(offset, 0), vids_max, offset, makeOrderedDict, geom));
+            pgs.push_back(std::bind(makeRandomIntFixedTable, new FixedStorage(offset), vids_max, offset, makeOrderedDict, unif));
+            pgs.push_back(std::bind(makeRandomIntFixedTable, new DefaultValueCompressedStorage(offset, 0), vids_max, offset, makeUnorderedDict, unif));
         }
         return make<Horizontal>(pgs);
     };
@@ -147,7 +175,7 @@ std::unique_ptr<ATable> makeSeqMainTable(std::size_t sz=MAINSIZE) {
 }
 
 std::unique_ptr<ATable> makeSeqDeltaTable(std::size_t sz=DELTASIZE, std::size_t offset=MAINSIZE) {
-  return make_unique<Table>(makeSequentialFixedStorage(sz), makeUnorderedDict(UPPER_VID, offset));
+  return make_unique<Table>(makeSequentialFixedStorage(sz), makeUnorderedDict(UPPER_VID));
 }
 
 std::unique_ptr<ATable> makeMainTable(std::size_t sz=MAINSIZE) {

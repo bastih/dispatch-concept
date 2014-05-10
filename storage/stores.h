@@ -21,7 +21,7 @@ class DefaultValueCompressedStorage final : public AStorage {
   void set(std::size_t x, value_id_t vid) override;
   value_id_t get(std::size_t x) const override;
   std::size_t rows() const override;
-
+  virtual void structure(std::ostream& out, size_t level=0) const { out << std::string(level, ' ') << "DefaultValueCompressed rows:" << rows() << " default: " << _default_value << " exception size: " << _exceptions.size() << std::endl; }
  private:
   const value_id_t _default_value;
   boost::dynamic_bitset<> _exception_positions;
