@@ -6,7 +6,7 @@
 #include "storage/alltypes.h"
 
 using jtables = std::tuple<Table*>;
-using jstorages = std::tuple<FixedStorage*, BitStorage<2>* >;
+using jstorages = std::tuple<FixedStorage*, BitStorage<2>*, DefaultValueCompressedStorage* >;
 
 template <typename ValueType>
 using jdicts = std::tuple<OrderedDictionary<ValueType>*,
@@ -29,9 +29,9 @@ struct JoinScanImpl {
                InnerDictType* inner_dict,
                std::size_t outer_offset,
                std::size_t inner_offset) {
-    for (std::size_t outer_row {0}, outer_end {outer_store->rows()}; outer_row < outer_end; ++outer_row) 
-      for (std::size_t inner_row {0}, inner_end {inner_store->rows()}; inner_row < inner_end; ++inner_row) 
-        if (outer_dict->getValue(outer_store->get(outer_row)) == inner_dict->getValue(inner_store->get(inner_row))) 
+    for (std::size_t outer_row {0}, outer_end {outer_store->rows()}; outer_row < outer_end; ++outer_row)
+      for (std::size_t inner_row {0}, inner_end {inner_store->rows()}; inner_row < inner_end; ++inner_row)
+        if (outer_dict->getValue(outer_store->get(outer_row)) == inner_dict->getValue(inner_store->get(inner_row)))
           join_positions.emplace_back(outer_row + outer_offset, inner_row + inner_offset);
   }
   /*
@@ -44,11 +44,11 @@ struct JoinScanImpl {
             outer_offset, inner_offset); }*/
 };
 
-dispatch< product<jtables, jstorages, jdicts<dis_int>, jtables, jstorages, jdicts<dis_int> > , 
+dispatch< product<jtables, jstorages, jdicts<dis_int>, jtables, jstorages, jdicts<dis_int> > ,
           JoinScanImpl,
           void, std::tuple<size_t, size_t> > join_dispatch;
 
-dispatch< product<jtables, jstorages, jdicts<dis_int>, jtables, jstorages, jdicts<dis_int> > , 
+dispatch< product<jtables, jstorages, jdicts<dis_int>, jtables, jstorages, jdicts<dis_int> > ,
           JoinScanImpl,
           void, std::tuple<size_t, size_t> > join_dispatch2;
 
@@ -97,7 +97,7 @@ void JoinScan::executeFallback() {
 void JoinScan::executeAbstract() {
   std::vector<std::pair<std::size_t, std::size_t> > join_positions;
   std::size_t oheight = _outer->height(), iheight = _inner->height();
-  for (std::size_t outer_row {0}, outer_end {oheight}; outer_row < outer_end; ++outer_row) 
+  for (std::size_t outer_row {0}, outer_end {oheight}; outer_row < outer_end; ++outer_row)
     for (std::size_t inner_row {0}, inner_end {iheight}; inner_row < inner_end; ++inner_row)
       if (_inner->getValue<dis_int>(_inner_col, inner_row) ==
           _outer->getValue<dis_int>(_outer_col, outer_row))

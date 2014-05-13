@@ -23,11 +23,11 @@ int main(int argc, char* const argv[]) {
 
     for (size_t x: {10, 100, 1000, 10000, 100000, 1000*1000, 10*1000*1000 }) {
         for (size_t p : {1, 2, 4, 8, 16, 32}) {
-            std::cerr << "Making store with rows: " << x << std::endl;
+            std::cerr << "Making store with rows: " << x << " parts" << p << std::endl;
             if (p > x) {
                 continue;
             }
-            auto somestore = makeEqualPartitionTable(x, 10, p);
+            auto somestore = makeCEqualPartitionTable(x, 10, p);
             auto smallstore = makeSmallStore();
             somestore->cacheOffsets();
             smallstore->cacheOffsets();
@@ -50,10 +50,10 @@ int main(int argc, char* const argv[]) {
                         so.executeAbstract();
                     });
             }
-
+            dis_int default_value = 0;
             {
-                std::string mo { "Scan FixedLengthStorage" };
-                ScanOperator so(somestore.get(), 1, value);
+                std::string mo { "Scan DefaultValue" };
+                ScanOperator so(somestore.get(), 0, default_value);
                 times_measure({mo, parts, num, "dispatch"}, [&]() {
                         so.execute();
                     });
@@ -67,8 +67,25 @@ int main(int argc, char* const argv[]) {
                 //         so.executePerfect();
                 //     });
             }
+            default_value = 1;
+            {
+                std::string mo { "Scan NonDefaultValue" };
+                ScanOperator so(somestore.get(), 0, default_value);
+                times_measure({mo, parts, num, "dispatch"}, [&]() {
+                        so.execute();
+                    });
+                times_measure({mo, parts, num, "fallback"}, [&]() {
+                        so.executeFallback();
+                    });
+                times_measure({mo, parts, num, "abstract"}, [&]() {
+                        so.executeAbstract();
+                    });
+                // times_measure({mo, parts, num, "perfect"}, [&]() {
+                //         so.executePerfect();
+                //     });
+            }
+            /*
 
-            /*auto default_value = ((BaseDictionary<dis_int>*)somestore->getValueId(3, 0).dict)->getValue(DEFAULT_VID);
               {
               std::string mo { "Scan DefaultValueCompressed"};
               ScanOperator so(somestore.get(), 3, default_value);
@@ -95,7 +112,8 @@ int main(int argc, char* const argv[]) {
               times_measure({mo, parts, num, "abstract"}, [&]() {
               so.executeAbstract();
               });
-              }*/
+              }
+            */
             {
                 std::string mo { "Join"};
                 JoinScan so(somestore.get(), smallstore.get(), col_t(4), col_t(4));

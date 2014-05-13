@@ -28,7 +28,7 @@ void DefaultValueCompressedStorage::set(std::size_t x, value_id_t vid) {
 
 value_id_t DefaultValueCompressedStorage::get(std::size_t x) const {
   if (unlikely(_exception_positions[x]))
-    return _exceptions.at(x);
+      return _exceptions.at(x);
   else
     return _default_value;
 }
@@ -54,12 +54,13 @@ void DefaultValueCompressedStorage::createPositionListFromDefault(
     ranges.emplace_back(start, set_bit_pos);
     start = set_bit_pos;
   }
-  positions.resize(positions.size() + sum_new_bits);
+  auto where_new = positions.size();
+  positions.resize(where_new + sum_new_bits);
   std::size_t off = 0;
   for (const auto& range : ranges) {
     auto elements = range._stop - range._start;
-    std::iota(positions.begin() + offset + off,
-              positions.begin() + offset + off + elements,
+    std::iota(positions.begin() + where_new + off,
+              positions.begin() + where_new + off + elements,
               range._start + offset);
     off += elements;
   }

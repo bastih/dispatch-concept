@@ -21,12 +21,12 @@ std::unique_ptr<BaseDictionary<dis_int>> makeUnorderedDict(std::size_t sz=UPPER_
     for (dis_int i = sz; i >= 0; --i) d->add(i);  // add vids in reverse
     return std::move(d);
 }
-
+/*
 std::unique_ptr<BaseDictionary<dis_int>> makeOrderedDictV(const std::set<value_id_t>& values) {
     auto d = make_unique<OrderedDictionary<dis_int>>();
-    /*for (const auto& val : values) {
-      d->add(val);
-        }*/
+    //for (const auto& val : values) {
+    //d->add(val);
+    //}
     for (size_t i = 0, e= *values.rbegin()+1; i<e; i++) {
         d->add(i);
     }
@@ -40,6 +40,7 @@ std::unique_ptr<BaseDictionary<dis_int>> makeUnorderedDictV(const std::set<value
     }
     return std::move(d);
 }
+*/
 
 
 using table_func = std::function<std::unique_ptr<ATable>()>;
@@ -87,10 +88,10 @@ std::vector<size_t> makePartOffsets(std::size_t num, std::size_t rows) {
 std::unique_ptr<ATable> makeEqualPartitionTable(std::size_t rows, std::size_t cols, std::size_t parts) {
     size_t vids_max = rows / 100;
     auto column_func = [&] () {
-        auto offsets = makePartOffsets(parts, rows);
         std::vector<table_func> pgs;
         auto unif = [=] (rand_engine& rd) { std::uniform_int_distribution<value_id_t> dist(0, vids_max); return dist(rd); };
-        for (auto offset : offsets) {
+        for (size_t part=0; part < parts; ++part) {
+            auto offset = rows/parts;
             pgs.push_back(std::bind(makeRandomIntFixedTable, new FixedStorage(offset), vids_max, offset, makeOrderedDict, unif));
         }
         return make<Horizontal>(pgs);
@@ -100,9 +101,33 @@ std::unique_ptr<ATable> makeEqualPartitionTable(std::size_t rows, std::size_t co
         colfuncs.push_back(column_func);
     }
     auto tab = make<Vertical>(colfuncs);
-    tab->structure(std::cout);
+    //tab->structure(std::cout);
     return tab;
 }
+
+std::unique_ptr<ATable> makeCEqualPartitionTable(std::size_t rows, std::size_t cols, std::size_t parts) {
+    size_t vids_max = rows / 100;
+    auto column_func = [&] () {
+        std::vector<table_func> pgs;
+        auto geom = [=] (rand_engine& rd) { std::geometric_distribution<> dist(0.8);
+                                            if (dist(rd) == 0)
+                                                return 0u;
+                                            else
+                                                return std::uniform_int_distribution<value_id_t>(0, vids_max)(rd); };
+        for (size_t part=0; part < parts; ++part) {
+            auto offset = rows/parts;
+            pgs.push_back(std::bind(makeRandomIntFixedTable, new DefaultValueCompressedStorage(offset, 0), vids_max, offset, makeOrderedDict, geom));
+        }
+        return make<Horizontal>(pgs);
+    };
+    std::vector<table_func> colfuncs;
+    for (std::size_t i=0; i < cols; i++) {
+        colfuncs.push_back(column_func);
+    }
+    auto tab = make<Vertical>(colfuncs);
+    return tab;
+}
+
 
 std::unique_ptr<ATable> makeSomeTable() {
     std::size_t rows = 40;
